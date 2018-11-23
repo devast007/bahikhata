@@ -17,7 +17,7 @@
     <string name="enter_phone_number">Enter Phone Number</string>
     <string name="authentication_failed">Authentication Failed</string>
     <string name="connecting_to_server">Conneting To Server !!</string>
-    <string name="please_wait">Please Wait !!</string>
+    <string name="please_wait">Please Wait...</string>
     <string name="give_company_id">Give Company ID</string>
     <string name="please_singh_by_giving_company_id">Please Give Valid Company ID Before SignIn.</string>
     <string name="loading_data">Please Wait... \n Loading Data</string>
@@ -152,4 +152,10 @@
     <string name="payment_mode">Payment Mode:</string>
     <string name="tag_account_id">tag_account_id</string>
     <string name="tag_user_designation">tag_user_designation</string>
+    <string name="serial_no">S. No.</string>
+    <string name="creating_file">Creating File</string>
+    <string name="excel_file">Excel File</string>
+    <string name="file_not_found">File Not Found !!</string>
+    <string name="edit">EDIT</string>
+    <string name="update_failed">Update Failed !!</string>
 </resources>

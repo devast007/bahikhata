@@ -30,6 +30,7 @@ class BankAccountViewActivity : AppCompatActivity(), View.OnClickListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_bank_account_view)
         mContext = this
+        toolbar.setTitle(R.string.bank_accounts)
         setSupportActionBar(toolbar)
 
 
@@ -71,7 +72,7 @@ class BankAccountViewActivity : AppCompatActivity(), View.OnClickListener {
 
     override fun onClick(view: View?) {
         when (view!!.id) {
-            R.id.tv_project_benefits -> launchTransactionviewActivity(view)
+            R.id.tv_amount -> launchTransactionviewActivity(view)
         }
     }
 

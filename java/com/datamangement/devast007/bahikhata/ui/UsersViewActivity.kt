@@ -40,6 +40,7 @@ class UsersViewActivity : AppCompatActivity(), View.OnClickListener {
         mUserList.clear()
         getUsers()
     }
+
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         getMenuInflater().inflate(R.menu.menu_add_button_view, menu)
         return true
@@ -48,7 +49,7 @@ class UsersViewActivity : AppCompatActivity(), View.OnClickListener {
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
 
         if (item!!.itemId == R.id.action_add) {
-            startActivity(Intent(this, AddUsersActivity::class.java));
+            startActivity(Intent(this, AddUsersActivity::class.java))
             return true
         }
         return super.onOptionsItemSelected(item)
@@ -85,18 +86,27 @@ class UsersViewActivity : AppCompatActivity(), View.OnClickListener {
 
     override fun onClick(view: View?) {
         when (view!!.id) {
-            R.id.tv_user_benefits -> launchTransactionViewActivity(view)
+            R.id.tv_amount -> launchTransactionViewActivity(view)
+            R.id.tv_edit_user_info -> modifyUserInfo(view)
         }
     }
 
+    private fun modifyUserInfo(view: View) {
+        var userId = view.getTag(R.string.tag_user_id).toString()
+        var intent = Intent(this, AddUsersActivity::class.java)
+        intent.putExtra(LedgerDefine.USER_ADD_TYPE, LedgerDefine.USER_ADD_TYPE_MODIFY)
+        intent.putExtra(LedgerDefine.USER_ID, userId)
+        startActivity(intent)
+    }
+
     private fun launchTransactionViewActivity(view: View) {
-        val userId:String = view.getTag(R.string.tag_user_id) as String
-        val designation:Long = view.getTag(R.string.tag_user_designation) as Long
-            val intent = Intent(mContext, TransactionViewActivity::class.java)
-                intent.putExtra(LedgerDefine.TRANSACTION_VIEW_TYPE, LedgerDefine.TRANSACTION_VIEW_TYPE_USER)
-                intent.putExtra(LedgerDefine.ID, userId)
-                intent.putExtra(LedgerDefine.DESIGNATION, designation)
-            startActivity(intent)
+        val userId: String = view.getTag(R.string.tag_user_id) as String
+        val designation: Long = view.getTag(R.string.tag_user_designation) as Long
+        val intent = Intent(mContext, TransactionViewActivity::class.java)
+        intent.putExtra(LedgerDefine.TRANSACTION_VIEW_TYPE, LedgerDefine.TRANSACTION_VIEW_TYPE_USER)
+        intent.putExtra(LedgerDefine.ID, userId)
+        intent.putExtra(LedgerDefine.DESIGNATION, designation)
+        startActivity(intent)
         //Toast.makeText(this, "Not Implement yet !! " + userId, Toast.LENGTH_LONG).show()
     }
 
@@ -126,20 +136,8 @@ class UsersViewActivity : AppCompatActivity(), View.OnClickListener {
 
             var projects = document.get(LedgerDefine.ACCESSIBLE_PROJECTS)
 
-            var tempStr: String? = null
             if (projects != null) {
-                projects as ArrayList<String>
-                for (projet in projects) {
-                    if (tempStr == null) {
-                        tempStr = projet
-                    } else {
-                        tempStr += ", " + tempStr
-                    }
-
-                }
-            }
-            if (tempStr != null) {
-                userDetails.accesibleProjectsStr = tempStr
+                userDetails.accesibleProjectsStr = (projects as ArrayList<String>).toString()
             }
 
             temp = document.get(LedgerDefine.AMOUNT)

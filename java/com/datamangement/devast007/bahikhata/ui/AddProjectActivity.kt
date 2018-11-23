@@ -1,11 +1,14 @@
 package com.datamangement.devast007.bahikhata.ui
 
 import android.content.Context
+import android.graphics.Color
 import android.os.Bundle
+import android.support.design.widget.Snackbar
 import android.support.v7.app.AppCompatActivity
 import android.text.TextUtils
 import android.util.Log
 import android.view.View
+import android.widget.TextView
 import android.widget.Toast
 import com.datamangement.devast007.bahikhata.R
 import com.datamangement.devast007.bahikhata.utils.LedgerDefine
@@ -35,6 +38,22 @@ class AddProjectActivity : AppCompatActivity(), View.OnClickListener {
 
     override fun onResume() {
         super.onResume()
+
+    }
+
+    private fun showSnackBar() {
+        val snackbar = Snackbar
+            .make(coordinatorLayout, R.string.saved_successfully, Snackbar.LENGTH_INDEFINITE)
+            .setAction(R.string.add_more) {
+                finish()
+                startActivity(intent)
+            }
+        snackbar.setActionTextColor(Color.BLUE)
+        val sbView = snackbar.view
+        sbView.setBackgroundColor(Color.RED)
+        val textView = sbView.findViewById<TextView>(android.support.design.R.id.snackbar_text)
+        textView.setTextColor(Color.parseColor("#FF0B3E0D"))
+        snackbar.show()
 
     }
 
@@ -80,8 +99,12 @@ class AddProjectActivity : AppCompatActivity(), View.OnClickListener {
         project.put(LedgerDefine.END_DATE, projectEndDate)
         project.put(LedgerDefine.AMOUNT, 0)
 
+        btn_save.isEnabled = false
         docRef.set(project)
-            .addOnSuccessListener(OnSuccessListener<Void> { Log.d(TAG, "DocumentSnapshot successfully written!") })
+            .addOnSuccessListener(OnSuccessListener<Void> {
+                Log.d(TAG, "DocumentSnapshot successfully written!")
+                showSnackBar()
+            })
             .addOnFailureListener(OnFailureListener { e ->
                 Log.w(TAG, "Error writing document", e)
                 btn_save.setText(R.string.saved_successfully)

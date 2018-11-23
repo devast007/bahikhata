@@ -129,14 +129,14 @@ class ProjectViewAdapter(projectsViewActivity: ProjectsViewActivity, projectsLis
     class GroupHolder(view: View) {
         var tvId = view.findViewById<TextView>(R.id.tv_project_id)
         val tvName = view.findViewById<TextView>(R.id.tv_project_name)
-        var tvAmount: TextView = view.findViewById<TextView>(R.id.tv_project_benefits) as TextView
+        var tvAmount: TextView = view.findViewById<TextView>(R.id.tv_amount) as TextView
 
     }
 
     class ChildHolder(view: View) {
         var tvId = view.findViewById<TextView>(R.id.tv_project_id)
         val tvName = view.findViewById<TextView>(R.id.tv_project_name)
-        val tvAmount = view.findViewById<TextView>(R.id.tv_project_benefits)
+        val tvAmount = view.findViewById<TextView>(R.id.tv_amount)
         var tvAddress = view.findViewById<TextView>(R.id.tv_project_address)
         var tvDivision = view.findViewById<TextView>(R.id.tv_project_div)
         val tvStartDate = view.findViewById<TextView>(R.id.tv_project_start_date)

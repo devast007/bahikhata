@@ -3,6 +3,7 @@ package com.datamangement.devast007.bahikhata.ui.fragment
 import android.app.Dialog
 import android.os.Bundle
 import android.support.v4.app.DialogFragment
+import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
@@ -90,22 +91,22 @@ class DialogFragmentMoreInfo : DialogFragment() {
         var title = view.findViewById<TextView>(R.id.tv_dialog_title)
         var tvId = view.findViewById<TextView>(R.id.tv_project_id)
         val tvName = view.findViewById<TextView>(R.id.tv_project_name)
-        val tvAmount = view.findViewById<TextView>(R.id.tv_project_benefits)
+        val tvAmount = view.findViewById<TextView>(R.id.tv_amount)
         var tvAddress = view.findViewById<TextView>(R.id.tv_project_address)
         var tvDivision = view.findViewById<TextView>(R.id.tv_project_div)
         val tvStartDate = view.findViewById<TextView>(R.id.tv_project_start_date)
         val tvEndDate = view.findViewById<TextView>(R.id.tv_project_end_date)
         val tvRemarks = view.findViewById<TextView>(R.id.tv_project_remarks)
 
-        title.setText(arguments!!.getString(LedgerDefine.PROJECT_ID))
-        tvId.setText(arguments!!.getString(LedgerDefine.PROJECT_ID))
-        tvName.setText(arguments!!.getString(LedgerDefine.NAME))
-        tvAmount.setText(LedgerUtils.getRupeesFormatted(arguments!!.getLong(LedgerDefine.AMOUNT)))
-        tvAddress.setText(arguments!!.getString(LedgerDefine.ADDRESS))
-        tvDivision.setText(arguments!!.getString(LedgerDefine.DIVISION))
-        tvStartDate.setText(arguments!!.getString(LedgerDefine.START_DATE))
-        tvEndDate.setText(arguments!!.getString(LedgerDefine.END_DATE))
-        tvRemarks.setText(arguments!!.getString(LedgerDefine.REMARK))
+        title.text = arguments!!.getString(LedgerDefine.PROJECT_ID)
+        tvId.text = arguments!!.getString(LedgerDefine.PROJECT_ID)
+        tvName.text = arguments!!.getString(LedgerDefine.NAME)
+        tvAmount.text = LedgerUtils.getRupeesFormatted(arguments!!.getLong(LedgerDefine.AMOUNT))
+        tvAddress.text = arguments!!.getString(LedgerDefine.ADDRESS)
+        tvDivision.text = arguments!!.getString(LedgerDefine.DIVISION)
+        tvStartDate.text = arguments!!.getString(LedgerDefine.START_DATE)
+        tvEndDate.text = arguments!!.getString(LedgerDefine.END_DATE)
+        tvRemarks.text = arguments!!.getString(LedgerDefine.REMARK)
 
     }
 
@@ -113,7 +114,7 @@ class DialogFragmentMoreInfo : DialogFragment() {
         var title = view.findViewById<TextView>(R.id.tv_dialog_title)
         var tvId = view.findViewById<TextView>(R.id.tv_user_id)
         val tvName = view.findViewById<TextView>(R.id.tv_user_name)
-        val tvAmount = view.findViewById<TextView>(R.id.tv_user_benefits)
+        val tvAmount = view.findViewById<TextView>(R.id.tv_amount_1)
         var tvAddress = view.findViewById<TextView>(R.id.tv_user_address)
         var tvUserCreatedDate = view.findViewById<TextView>(R.id.tv_user_created_date)
         val tvPhone = view.findViewById<TextView>(R.id.tv_user_phone)
@@ -122,18 +123,18 @@ class DialogFragmentMoreInfo : DialogFragment() {
         val tvRemarks = view.findViewById<TextView>(R.id.tv_user_remarks)
         val designation = view.findViewById<TextView>(R.id.tv_user_designation)
 
-        title.setText(arguments!!.getString(LedgerDefine.USER_ID))
+        title.text = arguments!!.getString(LedgerDefine.USER_ID)
 
-        tvId.setText(arguments!!.getString(LedgerDefine.USER_ID))
-        tvName.setText(arguments!!.getString(LedgerDefine.NAME))
-        tvAmount.setText(LedgerUtils.getRupeesFormatted(arguments!!.getLong(LedgerDefine.AMOUNT)))
-        tvAddress.setText(arguments!!.getString(LedgerDefine.ADDRESS))
-        tvUserCreatedDate.setText(arguments!!.getString(LedgerDefine.TIME_STAMP))
-        tvPhone.setText(arguments!!.getString(LedgerDefine.PHONE_NUMBER))
-        tvEmail.setText(arguments!!.getString(LedgerDefine.EMAIL))
-        tvAccessibleProjects.setText(arguments!!.getString(LedgerDefine.ACCESSIBLE_PROJECTS))
-        designation.setText("" + arguments!!.getLong(LedgerDefine.DESIGNATION))
-        tvRemarks.setText(arguments!!.getString(LedgerDefine.REMARK))
+        tvId.text = arguments!!.getString(LedgerDefine.USER_ID)
+        tvName.text = arguments!!.getString(LedgerDefine.NAME)
+        tvAmount.text = LedgerUtils.getRupeesFormatted(arguments!!.getLong(LedgerDefine.AMOUNT))
+        tvAddress.text = arguments!!.getString(LedgerDefine.ADDRESS)
+        tvUserCreatedDate.text = arguments!!.getString(LedgerDefine.TIME_STAMP)
+        tvPhone.text = arguments!!.getString(LedgerDefine.PHONE_NUMBER)
+        tvEmail.text = arguments!!.getString(LedgerDefine.EMAIL)
+        tvAccessibleProjects.text = arguments!!.getString(LedgerDefine.ACCESSIBLE_PROJECTS)
+        designation.text = "" + arguments!!.getLong(LedgerDefine.DESIGNATION)
+        tvRemarks.text = arguments!!.getString(LedgerDefine.REMARK)
     }
 
 }

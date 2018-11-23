@@ -127,8 +127,8 @@ class ProjectSelectForUserActivity : AppCompatActivity(), AdapterView.OnItemClic
             var tv = view!!.findViewById<TextView>(R.id.tv_project_name)
             Log.d(TAG, "cb " + cb)
             Log.d(TAG, "tv " + tv)
-            cb.setText(projectDetailView.projectID)
-            tv.setText(projectDetailView.name)
+            cb.text = projectDetailView.projectID
+            tv.text = projectDetailView.name
             cb.isChecked = projectDetailView.isChecked
 
             return view!!

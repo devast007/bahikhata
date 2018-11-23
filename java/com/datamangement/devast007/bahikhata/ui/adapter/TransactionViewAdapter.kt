@@ -6,10 +6,7 @@ import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.ExpandableListAdapter
-import android.widget.LinearLayout
-import android.widget.TextView
+import android.widget.*
 import com.datamangement.devast007.bahikhata.R
 import com.datamangement.devast007.bahikhata.ui.TransactionViewActivity
 import com.datamangement.devast007.bahikhata.utils.LedgerUtils
@@ -18,7 +15,7 @@ import com.datamangement.devast007.bahikhata.utils.TransactionDetails
 class TransactionViewAdapter(
     transactionViewActivity: TransactionViewActivity,
     transactionsList: ArrayList<TransactionDetails>
-) : ExpandableListAdapter {
+) : BaseExpandableListAdapter() {
     val mTransactionViewActivity = transactionViewActivity
     val mTransactionsList = transactionsList
     var mInflater: LayoutInflater =
@@ -161,7 +158,11 @@ class TransactionViewAdapter(
         groupHolder!!.tvTransactionDate.text = LedgerUtils.getConvertDate(transactionDetails.transactionDate)
         groupHolder!!.tvAmount.text = LedgerUtils.getRupeesFormatted(transactionDetails.amount)
 
-
+        if (transactionDetails.verified) {
+            view!!.setBackgroundColor(Color.YELLOW)
+        } else {
+            view!!.setBackgroundColor(Color.RED)
+        }
         return view
     }
 

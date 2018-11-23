@@ -5,9 +5,11 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
+import android.os.StrictMode
 import android.support.v7.app.AppCompatActivity
 import android.text.Spannable
 import android.text.SpannableString
+import android.text.TextUtils
 import android.text.style.ForegroundColorSpan
 import android.text.style.UnderlineSpan
 import android.util.Log
@@ -83,6 +85,8 @@ class GoogleSigninActivity : AppCompatActivity(), View.OnClickListener, GoogleAp
         if (mCurrentUserInfo != null) {
             mCurrentType = TYPE_SIGNED_DATA_FETCHING
         }
+        var mode = StrictMode.VmPolicy.Builder()
+        StrictMode.setVmPolicy(mode.build())
     }
 
     override fun onResume() {
@@ -90,6 +94,7 @@ class GoogleSigninActivity : AppCompatActivity(), View.OnClickListener, GoogleAp
         // Check if user is signed in (non-null) and update UI accordingly.
         when (mCurrentType) {
             TYPE_NOT_SIGNED -> {
+                et_company_id.setText(LedgerSharePrefManger(mContext).getCompanyName())
                 updateUI(TYPE_NOT_SIGNED)
             }
             TYPE_SIGNED_DATA_FETCHING -> {
@@ -216,7 +221,9 @@ class GoogleSigninActivity : AppCompatActivity(), View.OnClickListener, GoogleAp
     }
 
     private fun signIn() {
-        LedgerSharePrefManger(this!!.mContext!!).setCompanyName(et_company_id.text.toString())
+        var companyID = et_company_id.text.toString()
+        if (TextUtils.isEmpty(companyID)) return
+        LedgerSharePrefManger(this!!.mContext!!).setCompanyName(companyID)
         val intent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient)
         startActivityForResult(intent, REQUEST_CODE_SIGN_IN)
     }
@@ -271,13 +278,13 @@ class GoogleSigninActivity : AppCompatActivity(), View.OnClickListener, GoogleAp
                     Log.d(TAG, "mSignInProfile!!.isSupervisor =  " + mSignInProfile!!.isSupervisor)
                     if (mSignInProfile!!.isSupervisor) {
                         Log.d(TAG, "inside mSignInProfile!!.supervisorID " + mSignInProfile!!.supervisorID)
-                        tv_users_supervisor.visibility = View.VISIBLE
-                        tv_users_supervisor.setText(
-                            getUnderLineText(
-                                " Owner: " + mSignInProfile!!.supervisorID + "[ " + mSignInProfile!!.supervisorAmount + " ] "
+                        layout_supervisor_account.visibility = View.VISIBLE
+                        tv_users_supervisor.text =
+                                " Owner: " + mSignInProfile!!.supervisorID
+                        tv_users_supervisor_amount.text =
+                                LedgerUtils.getRupeesFormatted(mSignInProfile!!.supervisorAmount)
 
-                            )
-                        )
+
                         var adapter: ArrayAdapter<String> = ArrayAdapter<String>(
                             this,
                             android.R.layout.simple_list_item_1,
@@ -285,18 +292,15 @@ class GoogleSigninActivity : AppCompatActivity(), View.OnClickListener, GoogleAp
                         );
                         listview.adapter = adapter
                     } else {
-                        tv_users_supervisor.visibility = View.GONE
+                        layout_supervisor_account.visibility = View.GONE
                     }
                     Log.d(TAG, "mSignInProfile!!.isSupervisor =  " + mSignInProfile!!.isNormal)
                     if (mSignInProfile!!.isNormal) {
-                        tv_users_normal.setText(
-                            getUnderLineText(
-                                " User: " + mSignInProfile!!.normalId + "[ " + mSignInProfile!!.normalAmount + " ] "
-
-                            )
-                        )
+                        tv_users_normal.text =
+                                " Normal: " + mSignInProfile!!.normalId
+                        tv_users_normal_amount.text = LedgerUtils.getRupeesFormatted(mSignInProfile!!.normalAmount)
                     }
-                    tv_user_name.setText(mSignInProfile!!.name)
+                    tv_user_name.text = mSignInProfile!!.name
                 }
 
             }
@@ -327,7 +331,8 @@ class GoogleSigninActivity : AppCompatActivity(), View.OnClickListener, GoogleAp
         val db = FirestoreDataBase().db
         val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyName()
         Log.d(TAG, "companyID => " + companyID + " , mCurrentUserInfo!!.email = " + mCurrentUserInfo!!.email)
-        db.collection(LedgerDefine.COMPANIES_SLASH + companyID + "/users").whereEqualTo("email", mCurrentUserInfo!!.email)
+        db.collection(LedgerDefine.COMPANIES_SLASH + companyID + "/users")
+            .whereEqualTo("email", mCurrentUserInfo!!.email)
             .get()
             .addOnCompleteListener(OnCompleteListener<QuerySnapshot> { task ->
                 if (task.isSuccessful) {

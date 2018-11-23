@@ -23,4 +23,10 @@
             android:icon="@android:drawable/ic_input_add"
             app:showAsAction="ifRoom"></item>
 
+    <item
+            android:id="@+id/action_excel"
+            android:orderInCategory="300"
+            android:title="@string/excel_file"
+            app:showAsAction="never"></item>
+
 </menu>

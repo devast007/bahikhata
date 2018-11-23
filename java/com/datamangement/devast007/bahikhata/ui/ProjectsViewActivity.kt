@@ -63,7 +63,7 @@ class ProjectsViewActivity : AppCompatActivity(), View.OnClickListener {
 
     override fun onClick(view: View?) {
         when (view!!.id) {
-            R.id.tv_project_benefits -> launchTransactionviewActivity(view)
+            R.id.tv_amount -> launchTransactionviewActivity(view)
         }
     }
 

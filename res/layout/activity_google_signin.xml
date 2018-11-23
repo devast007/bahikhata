@@ -114,8 +114,8 @@
                 android:layout_margin="4dp"
                 android:textStyle="bold"
                 android:layout_below="@id/tv_admin_title"
-                android:background="@color/yellow"
-                android:textColor="@android:color/background_dark"
+                android:background="@color/colorPrimaryDark"
+                android:textColor="@android:color/white"
                 android:layout_gravity="center"
                 android:gravity="center"
                 android:text="projects"
@@ -128,8 +128,8 @@
                 android:layout_margin="4dp"
                 android:layout_below="@id/tv_admin_all_projects"
                 android:textStyle="bold"
-                android:background="@color/yellow"
-                android:textColor="@android:color/background_dark"
+                android:background="@color/colorPrimaryDark"
+                android:textColor="@android:color/white"
                 android:layout_gravity="center"
                 android:gravity="center"
                 android:text="users"
@@ -142,8 +142,8 @@
                 android:layout_margin="4dp"
                 android:layout_below="@id/tv_admin_all_users"
                 android:textStyle="bold"
-                android:background="@color/yellow"
-                android:textColor="@android:color/background_dark"
+                android:background="@color/colorPrimaryDark"
+                android:textColor="@android:color/white"
                 android:layout_gravity="center"
                 android:gravity="center"
                 android:text="transactions"
@@ -156,8 +156,8 @@
                 android:layout_margin="4dp"
                 android:layout_below="@id/tv_admin_all_transactions"
                 android:textStyle="bold"
-                android:background="@color/yellow"
-                android:textColor="@android:color/background_dark"
+                android:background="@color/colorPrimaryDark"
+                android:textColor="@android:color/white"
                 android:layout_gravity="center"
                 android:gravity="center"
                 android:text="@string/bank_accounts"
@@ -195,38 +195,80 @@
                 android:text="@string/accounts"
                 android:textSize="14dp"/>
 
-        <TextView
-                android:id="@+id/tv_users_supervisor"
-                android:layout_width="wrap_content"
+        <LinearLayout
+                android:id="@+id/layout_normal_account"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:layout_marginLeft="80dp"
                 android:layout_below="@id/dummy_id"
-                android:textStyle="bold"
-                android:textColor="@android:color/background_dark"
-                android:layout_gravity="center"
-                android:gravity="center"
-                android:text="supervisor"
-                android:textSize="20sp"/>
+                android:visibility="visible"
+                android:orientation="horizontal">
+            <TextView
+                    android:id="@+id/tv_users_supervisor"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginLeft="@dimen/activity_horizontal_margin"
+                    android:textStyle="bold"
+                    android:layout_gravity="center"
+                    android:textColor="@color/selector_text_color_state"
+                    android:gravity="center"
+                    android:text="supervisor"
+                    android:textSize="20sp"/>
 
-        <TextView
-                android:id="@+id/tv_users_normal"
-                android:layout_width="wrap_content"
+            <TextView
+                    android:id="@+id/tv_users_supervisor_amount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textStyle="bold"
+                    android:layout_marginLeft="@dimen/activity_horizontal_margin"
+                    android:textColor="@android:color/background_dark"
+                    android:layout_gravity="center"
+                    android:gravity="center"
+                    android:text="supervisor"
+                    android:textSize="15sp"/>
+
+        </LinearLayout>
+
+
+        <LinearLayout
+                android:id="@+id/layout_supervisor_account"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:layout_marginLeft="80dp"
-                android:layout_below="@id/tv_users_supervisor"
-                android:textStyle="bold"
-                android:textColor="@android:color/background_dark"
-                android:layout_gravity="center"
-                android:gravity="center"
-                android:text="supervisor"
-                android:textSize="20sp"/>
+                android:layout_below="@id/layout_normal_account"
+                android:visibility="visible"
+                android:orientation="horizontal">
+            <TextView
+                    android:id="@+id/tv_users_normal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginLeft="@dimen/activity_horizontal_margin"
+                    android:textStyle="bold"
+                    android:textColor="@color/selector_text_color_state"
+                    android:layout_gravity="center"
+                    android:gravity="center"
+                    android:text="supervisor"
+                    android:textSize="20sp"/>
+            <TextView
+                    android:id="@+id/tv_users_normal_amount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginLeft="@dimen/activity_horizontal_margin"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/background_dark"
+                    android:layout_gravity="center"
+                    android:gravity="center"
+                    android:text="supervisor"
+                    android:textSize="15sp"/>
+        </LinearLayout>
+        >
 
 
         <ListView
                 android:id="@+id/listview"
-                android:layout_below="@id/tv_users_normal"
+                android:layout_below="@id/layout_supervisor_account"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"/>
     </RelativeLayout>

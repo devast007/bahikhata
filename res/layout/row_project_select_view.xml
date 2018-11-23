@@ -10,6 +10,7 @@
             android:layout_width="wrap_content"
             android:layout_margin="4dp"
             android:textSize="18sp"
+            android:clickable="false"
             android:textColor="@color/selector_text_color_state"
             android:layout_height="wrap_content"/>
     <TextView

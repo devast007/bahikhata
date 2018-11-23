@@ -74,17 +74,20 @@ class UsersViewAdapter(usersViewActivity: UsersViewActivity, usersList: ArrayLis
         }
 
         val userDetails: UserDetails = mUsersList.get(pos)
-        childHolder!!.tvId.setText(userDetails.userID)
-        childHolder!!.tvName.setText(userDetails.name)
-        childHolder!!.tvAmount.setText(LedgerUtils.getRupeesFormatted(userDetails.amount))
-        childHolder!!.tvAddress.setText(userDetails.address)
-        childHolder!!.tvUserCreatedDate.setText(userDetails.userCreatedDate)
-        childHolder!!.tvPhone.setText(userDetails.phone)
-        childHolder!!.tvEmail.setText(userDetails.email)
-        childHolder!!.tvAccessibleProjects.setText(userDetails.accesibleProjectsStr)
-        childHolder!!.designation.setText("" + userDetails.designation)
-        childHolder!!.tvRemarks.setText(userDetails.remarks)
+        childHolder!!.tvId.text = userDetails.userID
+        childHolder!!.tvName.text = userDetails.name
+        childHolder!!.tvAmount.text = LedgerUtils.getRupeesFormatted(userDetails.amount)
+        childHolder!!.tvAddress.text = userDetails.address
+        childHolder!!.tvUserCreatedDate.text = userDetails.userCreatedDate
+        childHolder!!.tvPhone.text = userDetails.phone
+        childHolder!!.tvEmail.text = userDetails.email
+        childHolder!!.tvAccessibleProjects.text = userDetails.accesibleProjectsStr
+        childHolder!!.designation.text = "" + userDetails.designation
+        childHolder!!.tvRemarks.text = userDetails.remarks
 
+        childHolder!!.tvEdit.setTag(R.string.tag_user_id, userDetails.userID)
+        childHolder!!.tvEdit.setOnClickListener(mUsersViewActivity)
+        childHolder!!.tvEdit.visibility = View.VISIBLE
 
         return view
     }
@@ -113,9 +116,9 @@ class UsersViewAdapter(usersViewActivity: UsersViewActivity, usersList: ArrayLis
         }
 
         val userDetails: UserDetails = mUsersList.get(pos)
-        groupHolder!!.tvId.setText(userDetails.userID)
-        groupHolder!!.tvName.setText(userDetails.name)
-        groupHolder!!.tvAmount.setText(LedgerUtils.getRupeesFormatted(userDetails.amount))
+        groupHolder!!.tvId.text = userDetails.userID
+        groupHolder!!.tvName.text = userDetails.name
+        groupHolder!!.tvAmount.text = LedgerUtils.getRupeesFormatted(userDetails.amount)
         groupHolder!!.tvAmount.setTag(R.string.tag_user_id, userDetails.userID)
         groupHolder!!.tvAmount.setTag(R.string.tag_user_designation, userDetails.designation)
         groupHolder!!.tvAmount.setOnClickListener(mUsersViewActivity)
@@ -132,14 +135,15 @@ class UsersViewAdapter(usersViewActivity: UsersViewActivity, usersList: ArrayLis
     class GroupHolder(view: View) {
         var tvId = view.findViewById<TextView>(R.id.tv_user_id)
         val tvName = view.findViewById<TextView>(R.id.tv_user_name)
-        var tvAmount: TextView = view.findViewById<TextView>(R.id.tv_user_benefits) as TextView
+        var tvAmount = view.findViewById<TextView>(R.id.tv_amount)
 
     }
 
     class ChildHolder(view: View) {
+        var tvEdit = view.findViewById<TextView>(R.id.tv_edit_user_info)
         var tvId = view.findViewById<TextView>(R.id.tv_user_id)
         val tvName = view.findViewById<TextView>(R.id.tv_user_name)
-        val tvAmount = view.findViewById<TextView>(R.id.tv_user_benefits)
+        val tvAmount = view.findViewById<TextView>(R.id.tv_amount_1)
         var tvAddress = view.findViewById<TextView>(R.id.tv_user_address)
         var tvUserCreatedDate = view.findViewById<TextView>(R.id.tv_user_created_date)
         val tvPhone = view.findViewById<TextView>(R.id.tv_user_phone)

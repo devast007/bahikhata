@@ -67,9 +67,12 @@ class LedgerDefine {
 
         const val COMPANIES_SLASH = "companies/"
         const val SLASH_BANK_ACCOUNTS = "/bankAccounts"
-        val DEBIT_ACCOUNT_ID: String ="DebitAccountID"
-        val CREDIT_ACCOUNT_ID: String ="CreditAccountID"
-        val PAYMENT_MODE: String ="paymentMode"
+        const val DEBIT_ACCOUNT_ID: String ="DebitAccountID"
+        const val CREDIT_ACCOUNT_ID: String ="CreditAccountID"
+        const val PAYMENT_MODE: String ="paymentMode"
+        const val USER_ADD_TYPE: String ="USER_ADD_TYPE"
+        const val USER_ADD_TYPE_NEW: Int =1
+        const val USER_ADD_TYPE_MODIFY: Int =2
     }
 
 }
