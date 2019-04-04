@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.CoordinatorLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/coordinatorLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".ui.AddTransactionActivity">
+    <LinearLayout android:layout_width="match_parent"
+                  android:orientation="vertical"
+                  android:layout_height="match_parent">
+
+        <android.support.design.widget.AppBarLayout
+                android:layout_height="wrap_content"
+                android:layout_width="match_parent"
+                android:theme="@style/AppTheme.AppBarOverlay">
+
+            <android.support.v7.widget.Toolbar
+                    android:id="@+id/toolbar"
+                    android:layout_width="match_parent"
+                    android:layout_height="?attr/actionBarSize"
+                    android:background="?attr/colorPrimary"
+                    app:popupTheme="@style/AppTheme.PopupOverlay"/>
+
+        </android.support.design.widget.AppBarLayout>
+
+
+        <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+            <LinearLayout
+                    android:layout_width="match_parent"
+                    android:orientation="vertical"
+                    android:layout_height="match_parent">
+                <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:weightSum="6"
+                        android:background="#e9d4d4"
+                        android:layout_margin="4dp">
+
+                    <Button
+                            android:id="@+id/tv_project_id"
+                            android:layout_width="match_parent"
+                            android:gravity="left|center"
+                            android:padding="8dp"
+                            android:layout_margin="4dp"
+                            android:textColor="@color/selector_text_color_state"
+                            android:background="@android:color/white"
+                            android:hint="@string/select_project"
+                            android:layout_height="match_parent"/>
+                </LinearLayout>
+
+                <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="#e9d4d4"
+                        android:layout_margin="4dp">
+
+                    <Button
+                            android:id="@+id/tv_sender_id"
+                            android:layout_width="match_parent"
+                            android:gravity="left|center"
+                            android:textColor="@color/selector_text_color_state"
+                            android:maxLines="2"
+                            android:padding="8dp"
+                            android:layout_margin="4dp"
+                            android:ellipsize="end"
+                            android:background="@android:color/white"
+                            android:hint="@string/select_sender"
+                            android:layout_height="match_parent"/>
+                </LinearLayout>
+
+                <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="#e9d4d4"
+                        android:layout_margin="4dp">
+
+
+                    <Button
+                            android:id="@+id/tv_receiver_id"
+                            android:layout_width="match_parent"
+                            android:gravity="left|center"
+                            android:padding="8dp"
+                            android:layout_margin="4dp"
+                            android:textColor="@color/selector_text_color_state"
+                            android:background="@android:color/white"
+                            android:hint="@string/select_receiver"
+                            android:layout_height="match_parent"/>
+                </LinearLayout>
+
+                <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="4dp"
+                        android:background="#e9d4d4">
+
+                    <EditText
+                            android:id="@+id/et_amount"
+                            android:layout_width="match_parent"
+                            android:gravity="left"
+                            android:padding="8dp"
+                            android:layout_margin="4dp"
+                            android:textColor="@color/selector_text_color_state"
+                            android:inputType="number"
+                            android:background="@android:color/white"
+                            android:hint="@string/transaction_amount"
+                            android:layout_height="wrap_content"/>
+
+
+                </LinearLayout>
+
+                <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="4dp"
+                        android:orientation="horizontal"
+                        android:layout_gravity="right"
+                        android:gravity="right"
+                        android:weightSum="20"
+                        android:background="#e9d4d4">
+
+                    <Button
+                            android:id="@+id/tv_debit_account"
+                            android:layout_width="0dp"
+                            android:gravity="left|center"
+                            android:padding="8dp"
+                            android:layout_weight="19"
+                            android:layout_margin="4dp"
+                            android:textColor="@color/selector_text_color_state"
+                            android:background="@android:color/white"
+                            android:hint="@string/debit_account"
+                            android:layout_height="match_parent"/>
+                    <ImageButton android:id="@+id/img_btn_clear_debit_account"
+                                 android:layout_width="wrap_content"
+                                 android:layout_height="match_parent"
+                                 android:layout_weight="1"
+                                 android:src="@android:drawable/ic_delete"/>
+
+                </LinearLayout>
+
+                <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="4dp"
+                        android:weightSum="20"
+                        android:background="#e9d4d4">
+
+                    <Button
+                            android:id="@+id/tv_credit_account"
+                            android:layout_width="0dp"
+                            android:gravity="left|center"
+                            android:padding="8dp"
+                            android:layout_margin="4dp"
+                            android:layout_weight="19"
+                            android:textColor="@color/selector_text_color_state"
+                            android:background="@android:color/white"
+                            android:hint="@string/credit_account"
+                            android:layout_height="match_parent"/>
+                    <ImageButton android:id="@+id/img_btn_clear_credit_account"
+                                 android:layout_width="wrap_content"
+                                 android:layout_height="match_parent"
+                                 android:layout_weight="1"
+                                 android:src="@android:drawable/ic_delete"/>
+
+
+                </LinearLayout>
+                <LinearLayout
+
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="4dp"
+                        android:padding="4dp"
+                        android:orientation="horizontal"
+                        android:background="#e9d4d4">
+
+                    <RadioGroup
+                            android:id="@+id/rg_transaction_mode"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@android:color/white"
+                    >
+                        <RadioButton
+                                android:id="@+id/rb_rtgs"
+                                android:text="@string/rtgs"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"/>
+                        <RadioButton
+                                android:id="@+id/rb_neft"
+                                android:text="@string/neft"
+                                android:checked="true"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"/>
+                        <RadioButton
+                                android:id="@+id/rb_imps"
+                                android:text="@string/imps"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"/>
+                        <RadioButton
+                                android:id="@+id/rb_upi"
+                                android:text="@string/upi"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"/>
+
+                        <RadioButton
+                                android:id="@+id/rb_cheque_book"
+                                android:text="@string/cheque"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"/>
+
+                        <RadioButton
+                                android:id="@+id/rb_other"
+                                android:text="@string/other"
+                                android:checked="true"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"/>
+                    </RadioGroup>
+
+                </LinearLayout>
+
+                <TextView
+                        android:layout_width="match_parent"
+                        android:gravity="left"
+                        android:layout_marginRight="2dp"
+                        android:padding="4dp"
+                        android:layout_margin="4dp"
+                        android:textColor="@android:color/black"
+                        android:text="@string/transaction_date"
+                        android:layout_height="wrap_content"/>
+
+                <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:weightSum="4"
+                        android:background="#e9d4d4"
+                        android:padding="4dp"
+                        android:layout_margin="4dp"
+                >
+
+                    <EditText
+                            android:id="@+id/et_day"
+                            android:layout_width="0dp"
+                            android:textColor="@color/selector_text_color_state"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:layout_marginRight="2dp"
+                            android:padding="4dp"
+                            android:maxLength="2"
+                            android:inputType="number"
+                            android:background="@android:color/white"
+                            android:hint="@string/dd"
+                            android:layout_height="match_parent"/>
+                    <EditText
+                            android:id="@+id/et_month"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:padding="4dp"
+                            android:gravity="center"
+                            android:inputType="number"
+                            android:layout_marginLeft="2dp"
+                            android:maxLength="2"
+                            android:layout_marginRight="2dp"
+                            android:hint="@string/mm"
+                            android:textColor="@color/selector_text_color_state"
+                            android:background="@android:color/white"
+                            android:layout_height="match_parent"/>
+                    <EditText android:id="@+id/et_year"
+                              android:layout_width="0dp"
+                              android:layout_weight="2"
+                              android:layout_marginLeft="2dp"
+                              android:padding="4dp"
+                              android:maxLength="4"
+                              android:inputType="number"
+                              android:gravity="center"
+                              android:hint="@string/yyyy"
+                              android:textColor="@color/selector_text_color_state"
+                              android:background="@android:color/white"
+                              android:layout_height="match_parent"/>
+
+                </LinearLayout>
+
+                <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="4dp"
+                        android:background="#e9d4d4">
+
+                    <EditText
+                            android:id="@+id/et_remarks"
+                            android:layout_width="match_parent"
+                            android:gravity="left"
+                            android:padding="8dp"
+                            android:layout_margin="4dp"
+                            android:background="@android:color/white"
+                            android:hint="@string/remark_optional"
+                            android:layout_height="wrap_content"/>
+
+                </LinearLayout>
+
+                <Button
+                        android:id="@+id/btn_save"
+                        android:layout_width="match_parent"
+                        android:text="@string/save"
+                        android:padding="@dimen/activity_horizontal_margin"
+                        android:layout_margin="@dimen/activity_horizontal_margin"
+                        android:layout_height="wrap_content"/>
+            </LinearLayout>
+        </ScrollView>
+
+    </LinearLayout>
+</android.support.design.widget.CoordinatorLayout>

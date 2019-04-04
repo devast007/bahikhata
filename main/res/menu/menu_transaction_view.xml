@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto"
+      xmlns:tools="http://schemas.android.com/tools"
+      tools:context=".ui.AddProjectActivity">
+
+    <item
+            android:id="@+id/action_received"
+            android:orderInCategory="500"
+            android:title="@string/received"
+            android:icon="@mipmap/icon_incoming_green_arrow"
+            app:showAsAction="ifRoom"></item>
+    <item
+            android:id="@+id/action_send"
+            android:orderInCategory="400"
+            android:title="@string/sent"
+            android:icon="@mipmap/icon_outgoing_red_arrow"
+            app:showAsAction="ifRoom"></item>
+    <item
+            android:id="@+id/action_add"
+            android:orderInCategory="300"
+            android:title="@string/add_project"
+            android:icon="@android:drawable/ic_input_add"
+            app:showAsAction="ifRoom"></item>
+
+    <item
+            android:id="@+id/action_excel"
+            android:orderInCategory="300"
+            android:title="@string/excel_file"
+            app:showAsAction="never"></item>
+
+</menu>
