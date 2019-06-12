@@ -27,19 +27,19 @@ class UsersViewActivity : AppCompatActivity(), View.OnClickListener {
     val mContext: Context = this
     val TAG = "ProjectsViewActivity"
     val mUserList: ArrayList<UserDetails> = ArrayList<UserDetails>()
-    var mUsersAdapter: UsersViewAdapter? = null;
+    var mUsersAdapter: UsersViewAdapter? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_users_view)
         toolbar.setTitle(R.string.users)
         setSupportActionBar(toolbar)
+        getUsers()
     }
 
     override fun onStart() {
         super.onStart()
-        mUserList.clear()
-        getUsers()
+        //mUserList.clear()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -67,8 +67,9 @@ class UsersViewActivity : AppCompatActivity(), View.OnClickListener {
                     for (document in task.result!!) {
                         Log.d(TAG, document.id + " => " + document.data)
                         Log.d(TAG, " document.get(\"name\")+ => " + document.get("name"))
-                        setUsers(document);
+                        setUsers(document)
                     }
+                    //FirestoreDataBase().updateUserNameUppercase(mUserList,mContext)
                     setAdapter()
                 } else {
                     Log.d(TAG, "Error getting documents: ", task.exception)
@@ -151,5 +152,4 @@ class UsersViewActivity : AppCompatActivity(), View.OnClickListener {
             mUserList.add(userDetails)
         }
     }
-
 }

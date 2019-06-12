@@ -38,7 +38,6 @@
     </LinearLayout>
 
     <LinearLayout
-            xmlns:android="http://schemas.android.com/apk/res/android"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:weightSum="2"
@@ -60,7 +59,6 @@
     </LinearLayout>
 
     <LinearLayout
-            xmlns:android="http://schemas.android.com/apk/res/android"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:weightSum="2"
@@ -82,7 +80,6 @@
     </LinearLayout>
 
     <LinearLayout
-            xmlns:android="http://schemas.android.com/apk/res/android"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:weightSum="2"
@@ -268,7 +265,6 @@
 
 
     <LinearLayout
-            xmlns:android="http://schemas.android.com/apk/res/android"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:weightSum="2"
@@ -355,6 +351,27 @@
                 android:text="@string/accounts"
                 android:textStyle="bold"
                 android:textColor="@android:color/black"
+                android:layout_height="wrap_content"/>
+    </LinearLayout>
+
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:weightSum="2"
+            android:layout_margin="4dp"
+            android:orientation="horizontal">
+        <TextView
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:text="@string/time_stamp"
+                android:textColor="@android:color/darker_gray"
+                android:layout_height="wrap_content"/>
+        <TextView
+                android:id="@+id/tv_time_stamp"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:text="@string/time_stamp"
+                android:textStyle="bold"
                 android:layout_height="wrap_content"/>
     </LinearLayout>
 

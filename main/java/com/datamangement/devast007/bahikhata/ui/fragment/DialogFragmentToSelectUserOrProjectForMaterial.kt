@@ -11,23 +11,23 @@ import android.widget.ListView
 import android.widget.SearchView
 import android.widget.SimpleAdapter
 import com.datamangement.devast007.bahikhata.R
-import com.datamangement.devast007.bahikhata.ui.AddTransactionActivity
+import com.datamangement.devast007.bahikhata.ui.AddMaterialActivity
 import com.datamangement.devast007.bahikhata.utils.LedgerDefine
 import com.datamangement.devast007.bahikhata.utils.SqlDBFile
 import kotlinx.android.synthetic.main.activity_add_transaction.*
 
 
-class DialogFragmentToSelectUserOrProject : DialogFragment(), AdapterView.OnItemClickListener {
+class DialogFragmentToSelectUserOrProjectForMaterial : DialogFragment(), AdapterView.OnItemClickListener {
 
 
     private val TAG = "DialogSelectUserOrProject"
-    private var addTransactionActivity: AddTransactionActivity? = null
+    private var addMaterialActivity: AddMaterialActivity? = null
     private lateinit var mBottomSheetDialog: Dialog
     private var mType: Int = -1
     private var simpleAdapter: SimpleAdapter? = null
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        addTransactionActivity = activity as AddTransactionActivity
+        addMaterialActivity = activity as AddMaterialActivity
         mBottomSheetDialog = Dialog(
             activity!!,
             R.style.MaterialDialogSheet
@@ -53,14 +53,14 @@ class DialogFragmentToSelectUserOrProject : DialogFragment(), AdapterView.OnItem
                 titleSearchView.queryHint = getString(R.string.title_sender)
 
                 var itemDataList: ArrayList<Map<String, String>> = ArrayList<Map<String, String>>()
-                for (user in addTransactionActivity!!.mSenderList!!) {
+                for (user in addMaterialActivity!!.mSenderList!!) {
                     val listItemMap = HashMap<String, String>()
                     listItemMap.put(LedgerDefine.USER_ID, user.userID)
                     listItemMap.put(LedgerDefine.NAME, user.name)
                     itemDataList.add(listItemMap)
                 }
                 simpleAdapter = SimpleAdapter(
-                    addTransactionActivity, itemDataList, android.R.layout.simple_list_item_2,
+                    addMaterialActivity, itemDataList, android.R.layout.simple_list_item_2,
                     arrayOf(LedgerDefine.USER_ID, LedgerDefine.NAME), intArrayOf(android.R.id.text1, android.R.id.text2)
                 )
                 listView.adapter = simpleAdapter
@@ -70,14 +70,14 @@ class DialogFragmentToSelectUserOrProject : DialogFragment(), AdapterView.OnItem
                 titleSearchView.queryHint = getString(R.string.title_receiver)
 
                 var itemDataList: ArrayList<Map<String, String>> = ArrayList<Map<String, String>>()
-                for (user in addTransactionActivity!!.mReceiverList!!) {
+                for (user in addMaterialActivity!!.mReceiverList!!) {
                     val listItemMap = HashMap<String, String>()
                     listItemMap.put(LedgerDefine.USER_ID, user.userID)
                     listItemMap.put(LedgerDefine.NAME, user.name)
                     itemDataList.add(listItemMap)
                 }
                 simpleAdapter = SimpleAdapter(
-                    addTransactionActivity, itemDataList, android.R.layout.simple_list_item_2,
+                    addMaterialActivity, itemDataList, android.R.layout.simple_list_item_2,
                     arrayOf(LedgerDefine.USER_ID, LedgerDefine.NAME), intArrayOf(android.R.id.text1, android.R.id.text2)
                 )
                 listView.adapter = simpleAdapter
@@ -86,7 +86,7 @@ class DialogFragmentToSelectUserOrProject : DialogFragment(), AdapterView.OnItem
                 titleSearchView.queryHint = getString(R.string.title_project)
 
                 var itemDataList: ArrayList<Map<String, String>> = ArrayList<Map<String, String>>()
-                for (project in addTransactionActivity!!.mProjectList!!) {
+                for (project in addMaterialActivity!!.mProjectList!!) {
                     val listItemMap = HashMap<String, String>()
                     listItemMap.put(LedgerDefine.PROJECT_ID, project.projectID)
                     listItemMap.put(LedgerDefine.NAME, project.name)
@@ -94,7 +94,7 @@ class DialogFragmentToSelectUserOrProject : DialogFragment(), AdapterView.OnItem
                 }
 
                 simpleAdapter = SimpleAdapter(
-                    addTransactionActivity,
+                    addMaterialActivity,
                     itemDataList,
                     android.R.layout.simple_list_item_2,
                     arrayOf(LedgerDefine.PROJECT_ID, LedgerDefine.NAME),
@@ -108,7 +108,7 @@ class DialogFragmentToSelectUserOrProject : DialogFragment(), AdapterView.OnItem
                 titleSearchView.queryHint = getString(R.string.title_bank_account)
 
                 var itemDataList: ArrayList<Map<String, String>> = ArrayList<Map<String, String>>()
-                for (account in addTransactionActivity!!.mBankAccountList!!) {
+                for (account in addMaterialActivity!!.mBankAccountList!!) {
                     val listItemMap = HashMap<String, String>()
                     listItemMap.put(LedgerDefine.BANK_ACCOUNT_NUMBER, account.accountNo)
                     listItemMap.put(LedgerDefine.PAYEE_NAME, account.payee)
@@ -116,7 +116,7 @@ class DialogFragmentToSelectUserOrProject : DialogFragment(), AdapterView.OnItem
                 }
 
                 simpleAdapter = SimpleAdapter(
-                    addTransactionActivity,
+                    addMaterialActivity,
                     itemDataList,
                     android.R.layout.simple_list_item_2,
                     arrayOf(LedgerDefine.BANK_ACCOUNT_NUMBER, LedgerDefine.PAYEE_NAME),
@@ -138,7 +138,7 @@ class DialogFragmentToSelectUserOrProject : DialogFragment(), AdapterView.OnItem
                 return true
             }
         })
-        titleSearchView.onActionViewExpanded();
+       titleSearchView.onActionViewExpanded();
         //titleSearchView.setIconified(false);
         titleSearchView.requestFocus()
         return mBottomSheetDialog
@@ -152,11 +152,11 @@ class DialogFragmentToSelectUserOrProject : DialogFragment(), AdapterView.OnItem
             LedgerDefine.SELECTION_TYPE_SENDER -> {
                 var map = clickItemObj as HashMap<String, String>
                 var id = map.get(LedgerDefine.USER_ID)
-                for (user in addTransactionActivity!!.mSenderList!!) {
+                for (user in addMaterialActivity!!.mSenderList!!) {
                     if (id == user.userID) {
-                        addTransactionActivity!!.mSelectedSender = user
+                        addMaterialActivity!!.mSelectedSender = user
                         var str = user.userID + "\n" + user.name
-                        addTransactionActivity!!.tv_sender_id.setText(str)
+                        addMaterialActivity!!.tv_sender_id.setText(str)
                         break
                     }
                 }
@@ -164,12 +164,12 @@ class DialogFragmentToSelectUserOrProject : DialogFragment(), AdapterView.OnItem
             LedgerDefine.SELECTION_TYPE_RECEIVER -> {
                 var map = clickItemObj as HashMap<String, String>
                 var id = map.get(LedgerDefine.USER_ID)
-                for (user in addTransactionActivity!!.mReceiverList!!) {
+                for (user in addMaterialActivity!!.mReceiverList!!) {
                     if (id == user.userID) {
-                        addTransactionActivity!!.mSelectedReceiver = user
+                        addMaterialActivity!!.mSelectedReceiver = user
                         var str = user.userID + "\n" + user.name
-                        addTransactionActivity!!.tv_receiver_id.setText(str)
-                        setPreferenceFromDB(id)
+                        addMaterialActivity!!.tv_receiver_id.setText(str)
+                        //setPreferenceFromDB(id)
                         break
 
                     }
@@ -178,11 +178,11 @@ class DialogFragmentToSelectUserOrProject : DialogFragment(), AdapterView.OnItem
             LedgerDefine.SELECTION_TYPE_PROJECT -> {
                 var map = clickItemObj as HashMap<String, String>
                 var id = map.get(LedgerDefine.PROJECT_ID)
-                for (project in addTransactionActivity!!.mProjectList!!) {
+                for (project in addMaterialActivity!!.mProjectList!!) {
                     if (id == project.projectID) {
-                        addTransactionActivity!!.mSelectedProject = project
+                        addMaterialActivity!!.mSelectedProject = project
                         var str = project.projectID + "\n" + project.name
-                        addTransactionActivity!!.tv_project_id.setText(str)
+                        addMaterialActivity!!.tv_project_id.setText(str)
                         break
                     }
                 }
@@ -191,15 +191,15 @@ class DialogFragmentToSelectUserOrProject : DialogFragment(), AdapterView.OnItem
             LedgerDefine.SELECTION_TYPE_CREDIT_ACCOUNT -> {
                 var map = clickItemObj as HashMap<String, String>
                 var accountNo = map.get(LedgerDefine.BANK_ACCOUNT_NUMBER)
-                for (bankAccountDetail in addTransactionActivity!!.mBankAccountList!!) {
+                for (bankAccountDetail in addMaterialActivity!!.mBankAccountList!!) {
                     if (accountNo == bankAccountDetail.accountNo) {
                         var str = bankAccountDetail.accountNo + "\n" + bankAccountDetail.payee
                         if (mType == LedgerDefine.SELECTION_TYPE_DEBIT_ACCOUNT) {
-                            addTransactionActivity!!.mSelectedDebitAccount = bankAccountDetail
-                            addTransactionActivity!!.tv_debit_account.setText(str)
+                          //  addMaterialActivity!!.mSelectedDebitAccount = bankAccountDetail
+                            addMaterialActivity!!.tv_debit_account.setText(str)
                         } else {
-                            addTransactionActivity!!.mSelectedCreditAccount = bankAccountDetail
-                            addTransactionActivity!!.tv_credit_account.setText(str)
+                            //addMaterialActivity!!.mSelectedCreditAccount = bankAccountDetail
+                            addMaterialActivity!!.tv_credit_account.setText(str)
                         }
 
                     }
@@ -208,47 +208,5 @@ class DialogFragmentToSelectUserOrProject : DialogFragment(), AdapterView.OnItem
         }
 
         mBottomSheetDialog.dismiss()
-    }
-
-    private fun setPreferenceFromDB(id: String) {
-        val cursor = addTransactionActivity!!.contentResolver.query(
-            SqlDBFile.CONTENT_URI_TABLE_SUGGESTION,
-            null,
-            LedgerDefine.RECEIVER_ID + "=?",
-            Array<String>(1) { id },
-            null
-        )
-        if (cursor != null) {
-            if (cursor.moveToFirst()) {
-                val tempProject = cursor.getString(cursor.getColumnIndex(LedgerDefine.PROJECT_ID))
-                val creditAccount = cursor.getString(cursor.getColumnIndex(LedgerDefine.CREDIT_ACCOUNT_ID))
-                val remarks = cursor.getString(cursor.getColumnIndex(LedgerDefine.REMARK))
-
-                for (project in addTransactionActivity!!.mProjectList!!) {
-                    if (tempProject == project.projectID) {
-                        addTransactionActivity!!.mSelectedProject = project
-                        var str = project.projectID + "\n" + project.name
-                        addTransactionActivity!!.tv_project_id.text = str
-                        break
-                    }
-                }
-                var isCreditAccountFound = false
-                for (bankAccountDetail in addTransactionActivity!!.mBankAccountList!!) {
-                    if (creditAccount == bankAccountDetail.id) {
-                        var str = bankAccountDetail.accountNo + "\n" + bankAccountDetail.payee
-                        addTransactionActivity!!.mSelectedCreditAccount = bankAccountDetail
-                        addTransactionActivity!!.tv_credit_account.text = str
-                        isCreditAccountFound = true
-                        break
-                    }
-                }
-                if (!isCreditAccountFound) {
-                    addTransactionActivity!!.mSelectedCreditAccount = null
-                    addTransactionActivity!!.tv_credit_account.text = null
-                }
-                addTransactionActivity!!.et_remarks.setText(remarks)
-            }
-            cursor.close()
-        }
     }
 }

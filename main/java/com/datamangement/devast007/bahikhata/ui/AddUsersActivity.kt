@@ -227,18 +227,18 @@ class AddUsersActivity : AppCompatActivity(), View.OnClickListener {
 
         var users = mDB.collection(LedgerDefine.COMPANIES_SLASH + mCompanyName + "/users");
         var docRefNor = users.document(this!!.mNormalId!!)
-        Log.d(TAG, "docRef " + docRefNor)
+        Log.d(TAG, "docRef $docRefNor")
         // [START set_document]
         val user = HashMap<String, Any>()
-        user.put(LedgerDefine.USER_ID, this!!.mNormalId!!)
-        user.put(LedgerDefine.NAME, userName)
-        user.put(LedgerDefine.ADDRESS, userAddress)
-        user.put(LedgerDefine.EMAIL, userEmail)
-        user.put(LedgerDefine.PHONE_NUMBER, userPhone)
-        user.put(LedgerDefine.REMARK, remarks)
-        user.put(LedgerDefine.DESIGNATION, LedgerDefine.DESIGNATION_NORMAL)
-        user.put(LedgerDefine.TIME_STAMP, FieldValue.serverTimestamp())
-        user.put(LedgerDefine.ACCESSIBLE_PROJECTS, this!!.mProjectIDArrayList!!)
+        user[LedgerDefine.USER_ID] = this!!.mNormalId!!
+        user[LedgerDefine.NAME] = userName.toUpperCase().trim()
+        user[LedgerDefine.ADDRESS] = userAddress
+        user[LedgerDefine.EMAIL] = userEmail
+        user[LedgerDefine.PHONE_NUMBER] = userPhone
+        user[LedgerDefine.REMARK] = remarks
+        user[LedgerDefine.DESIGNATION] = LedgerDefine.DESIGNATION_NORMAL
+        user[LedgerDefine.TIME_STAMP] = FieldValue.serverTimestamp()
+        user[LedgerDefine.ACCESSIBLE_PROJECTS] = this!!.mProjectIDArrayList!!
         btn_save.isEnabled = false
         if (mUserAddType == LedgerDefine.USER_ADD_TYPE_MODIFY) {
             docRefNor.update(user).addOnSuccessListener(OnSuccessListener {
@@ -255,8 +255,8 @@ class AddUsersActivity : AppCompatActivity(), View.OnClickListener {
         }
         if (checkbox_supervisor.isChecked) {
             if (mUserAddType == LedgerDefine.USER_ADD_TYPE_MODIFY) {
-                user.put(LedgerDefine.DESIGNATION, LedgerDefine.DESIGNATION_SUPERVISOR)
-                user.put(LedgerDefine.USER_ID, this!!.mSupervisorId!!)
+                user[LedgerDefine.DESIGNATION] = LedgerDefine.DESIGNATION_SUPERVISOR
+                user[LedgerDefine.USER_ID] = this!!.mSupervisorId!!
                 var docRefSup = users.document(this!!.mSupervisorId!!)
                 docRefSup.update(user).addOnSuccessListener(OnSuccessListener {
                     Log.d(TAG, "DocumentSnapshot successfully updated!")
@@ -272,8 +272,8 @@ class AddUsersActivity : AppCompatActivity(), View.OnClickListener {
                         .addOnFailureListener(OnFailureListener { e -> Log.w(TAG, "Error writing document", e) })
                 })
             } else {
-                user.put(LedgerDefine.DESIGNATION, LedgerDefine.DESIGNATION_SUPERVISOR)
-                user.put(LedgerDefine.USER_ID, this!!.mSupervisorId!!)
+                user[LedgerDefine.DESIGNATION] = LedgerDefine.DESIGNATION_SUPERVISOR
+                user[LedgerDefine.USER_ID] = this!!.mSupervisorId!!
                 var docRefSup = users.document(this!!.mSupervisorId!!)
                 docRefSup.set(user)
                     .addOnSuccessListener(OnSuccessListener<Void> {

@@ -8,7 +8,6 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.TextView
 import com.datamangement.devast007.bahikhata.R
-import com.datamangement.devast007.bahikhata.ui.TransactionViewActivity
 import com.datamangement.devast007.bahikhata.utils.LedgerDefine
 import com.datamangement.devast007.bahikhata.utils.LedgerUtils
 
@@ -17,12 +16,10 @@ class DialogFragmentMoreInfo : DialogFragment() {
 
 
     private val TAG = "DialogFragmentToSelectUserOrProject"
-    private var transactionViewActivity: TransactionViewActivity? = null
     private lateinit var mBottomSheetDialog: Dialog
     private var mType: Int = -1;
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        transactionViewActivity = activity as TransactionViewActivity
         mBottomSheetDialog = Dialog(
             activity!!,
             R.style.MaterialDialogSheet

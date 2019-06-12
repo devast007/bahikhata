@@ -8,6 +8,7 @@ import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.gms.tasks.OnFailureListener
 import com.google.android.gms.tasks.OnSuccessListener
 import com.google.android.gms.tasks.Task
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.QuerySnapshot
@@ -132,9 +133,11 @@ class FirestoreDataBase {
             map.put(LedgerDefine.END_DATE, project.endDate)
             map.put(LedgerDefine.AMOUNT, project.amount)
             val delete =
-                db.collection(LedgerDefine.COMPANIES_SLASH + companyID + "/projects").document(project.projectID)
+                db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_PROJECTS)
+                    .document(project.projectID)
             //batchProjectDel.delete(delete)
-            val add = db.collection(LedgerDefine.COMPANIES_SLASH + companyID + "/projects").document(newID)
+            val add =
+                db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_PROJECTS).document(newID)
             //batchProjectadd.set(add, map)
             db.collection(LedgerDefine.COMPANIES_SLASH + companyID + "/transactions")
                 .whereEqualTo(LedgerDefine.PROJECT_ID, project.projectID)
@@ -147,7 +150,7 @@ class FirestoreDataBase {
                             Log.d(TAG, " document.get(\"name\")+ => " + document.get("name"))
                             var tran = db.collection(LedgerDefine.COMPANIES_SLASH + companyID + "/transactions")
                                 .document(document.id)
-                           // batchtran.update(tran, LedgerDefine.PROJECT_ID, newID)
+                            // batchtran.update(tran, LedgerDefine.PROJECT_ID, newID)
                         }
                         if (task!!.result!!.size() > 0) {
                             batchtran.commit().addOnCompleteListener {
@@ -192,7 +195,7 @@ class FirestoreDataBase {
 
         val companyID = LedgerSharePrefManger(mContext).getCompanyName()
         val batchProjectadd = db.batch()
-        for(key in keys){
+        for (key in keys) {
             val project = HashMap<String, Any>()
             project.put(LedgerDefine.PROJECT_ID, key)
             project.put(LedgerDefine.NAME, key)
@@ -203,13 +206,80 @@ class FirestoreDataBase {
             project.put(LedgerDefine.END_DATE, "")
             project.put(LedgerDefine.AMOUNT, pKeyMap[key]!!)
 
-            val add = db.collection(LedgerDefine.COMPANIES_SLASH + companyID + "/projects").document(key)
-           // batchProjectadd.set(add, project)
+            val add =
+                db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_PROJECTS).document(key)
+            // batchProjectadd.set(add, project)
         }
 
         batchProjectadd.commit().addOnCompleteListener {
             // ...
             Log.d("devde", "all batchProjectadd.commit()")
+        }
+
+    }
+
+
+    fun updatePayeeNameUppercase(mBankDetails: ArrayList<BankAccountDetail>, mContext: Context) {
+
+
+        val companyID = LedgerSharePrefManger(mContext).getCompanyName()
+        val batchUpdatePayee = db.batch()
+        for (detail in mBankDetails) {
+            val bankAccount = HashMap<String, Any>()
+            var payeeName = detail.payee.toString().toUpperCase().trim()
+            Log.d("devde", "payeeName = " + payeeName)
+            bankAccount.put(LedgerDefine.PAYEE_NAME, payeeName)
+            val refs = db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_BANK_ACCOUNTS)
+                .document(detail.id)
+            batchUpdatePayee.update(refs, bankAccount)
+        }
+
+        batchUpdatePayee.commit().addOnCompleteListener {
+            // ...
+            Log.d("devde", "all batchUpdatePayee.commit()")
+        }
+
+    }
+
+
+    fun updateUserNameUppercase(usersDetails: ArrayList<UserDetails>, mContext: Context) {
+
+
+        val companyID = LedgerSharePrefManger(mContext).getCompanyName()
+        val batchUpdatePayee = db.batch()
+        for (detail in usersDetails) {
+            val user = HashMap<String, Any>()
+            var name = detail.name.toString().toUpperCase().trim()
+            Log.d("devde", "Name = $name")
+            user[LedgerDefine.NAME] = name
+            val refs = db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_USERS)
+                .document(detail.userID)
+            batchUpdatePayee.update(refs, user)
+        }
+
+        batchUpdatePayee.commit().addOnCompleteListener {
+            // ...
+            Log.d("devde", "all updateUserNameUppercase.commit()")
+        }
+
+    }
+
+    fun setTimeStampForProjects(projectDetails: ArrayList<ProjectDetails>, mContext: Context) {
+
+
+        val companyID = LedgerSharePrefManger(mContext).getCompanyName()
+        val batchUpdateProjects = db.batch()
+        for (detail in projectDetails) {
+            val project = HashMap<String, Any>()
+            project[LedgerDefine.TIME_STAMP] = FieldValue.serverTimestamp()
+            val refs = db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_PROJECTS)
+                .document(detail.projectID)
+            batchUpdateProjects.update(refs, project)
+        }
+
+        batchUpdateProjects.commit().addOnCompleteListener {
+            // ...
+            Log.d("devde", "all updateUserNameUppercase.commit()")
         }
 
     }

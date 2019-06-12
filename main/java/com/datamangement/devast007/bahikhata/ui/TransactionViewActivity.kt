@@ -62,7 +62,7 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
         mUserDesignation = intent.getLongExtra(LedgerDefine.DESIGNATION, -1)
 
         if (mTransactionViewType != -1 && mID != null) {
-            supportActionBar!!.setSubtitle(mID)
+            supportActionBar!!.subtitle = mID
         }
         getAccounts()
         getUsers()
@@ -129,7 +129,7 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     var mDialog: ProgressDialog? = null
-    fun createExcelSheet() {
+    private fun createExcelSheet() {
 
         if (!isStoragePermissionGranted()) return
         mDialog = ProgressDialog.show(
@@ -181,12 +181,12 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun registerLocalBroadcastReceiver() {
         LocalBroadcastManager.getInstance(mContext!!)
-            .registerReceiver(mReceiver, IntentFilter(LedgerDefine.LOCAL_BROARDCAT_INTENT))
+            .registerReceiver(mReceiver, IntentFilter(LedgerDefine.LOCAL_BROADCAST_INTENT))
     }
 
     private val mReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent!!.action == LedgerDefine.LOCAL_BROARDCAT_INTENT) {
+            if (intent!!.action == LedgerDefine.LOCAL_BROADCAST_INTENT) {
                 mDialog!!.dismiss()
                 val filePath = intent!!.getStringExtra(LedgerDefine.INTENT_EXTRA_FILE_PATH)
                 val dataType = "application/vnd.ms-excel"
@@ -229,10 +229,12 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
         val excel = menu!!.findItem(R.id.action_excel)
 
         if (received != null) {
-            received.isVisible = mTransactionViewType == LedgerDefine.TRANSACTION_VIEW_TYPE_USER
+            if (mTransactionViewType == LedgerDefine.TRANSACTION_VIEW_TYPE_USER || mTransactionViewType == LedgerDefine.TRANSACTION_VIEW_TYPE_BANK_ACCOUNT)
+                received.isVisible = true
         }
         if (sent != null) {
-            sent.isVisible = mTransactionViewType == LedgerDefine.TRANSACTION_VIEW_TYPE_USER
+            if (mTransactionViewType == LedgerDefine.TRANSACTION_VIEW_TYPE_USER || mTransactionViewType == LedgerDefine.TRANSACTION_VIEW_TYPE_BANK_ACCOUNT)
+                sent.isVisible = true
         }
 
         if (excel != null) {
@@ -472,7 +474,7 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
         showSnackBar(projectID)
         val db = FirestoreDataBase().db
         val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyName()
-        db.collection(LedgerDefine.COMPANIES_SLASH + companyID + "/projects")
+        db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_PROJECTS)
             .whereEqualTo(LedgerDefine.PROJECT_ID, projectID)
             .get()
             .addOnCompleteListener(OnCompleteListener<QuerySnapshot> { task ->
@@ -585,7 +587,7 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
         return TextUtils.isEmpty(str)
     }
 
-    private fun launchTransactionviewActivity(view: View) {
+    private fun launchTransactionViewActivity(view: View) {
         val projectId = view.getTag(R.string.tag_project_id)
         Toast.makeText(this, "Not Implement yet !! " + projectId, Toast.LENGTH_LONG).show()
     }
@@ -598,7 +600,7 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
         try {
             LocalBroadcastManager.getInstance(mContext!!)
                 .unregisterReceiver(mReceiver)
-        }catch (e:java.lang.Exception){
+        } catch (e: java.lang.Exception) {
 
         }
 
@@ -755,10 +757,24 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
         mConditionForUser = conditionForUser
         val db = FirestoreDataBase().db
         val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyName()
-        Log.d(TAG, "companyID => " + companyID + " mLastDoc = " + mLastDoc)
+        Log.d(TAG, "companyID => $companyID mLastDoc = $mLastDoc")
         var query: Query = db.collection(LedgerDefine.COMPANIES_SLASH + companyID + "/transactions")
 
-        if (mTransactionViewType == LedgerDefine.TRANSACTION_VIEW_TYPE_PROJECT) {
+        if (mTransactionViewType == LedgerDefine.TRANSACTION_VIEW_TYPE_BANK_ACCOUNT) {
+
+
+            if (conditionForUser == SENT) {
+                query = query.whereEqualTo(
+                    LedgerDefine.DEBIT_ACCOUNT_ID,
+                    mID
+                )
+            } else {
+                query = query.whereEqualTo(
+                    LedgerDefine.CREDIT_ACCOUNT_ID,
+                    mID
+                )
+            }
+        } else if (mTransactionViewType == LedgerDefine.TRANSACTION_VIEW_TYPE_PROJECT) {
             query = query.whereEqualTo(
                 LedgerDefine.PROJECT_ID,
                 mID

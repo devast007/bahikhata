@@ -42,14 +42,13 @@ class BankAccountViewActivity : AppCompatActivity(), View.OnClickListener {
         mContext = this
         toolbar.setTitle(R.string.bank_accounts)
         setSupportActionBar(toolbar)
+        getAccounts()
 
 
     }
 
     override fun onStart() {
         super.onStart()
-        mAccountsList.clear()
-        getAccounts()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -62,7 +61,7 @@ class BankAccountViewActivity : AppCompatActivity(), View.OnClickListener {
         if (item!!.itemId == R.id.action_add) {
             startActivity(Intent(this, AddBankAccountActivity::class.java));
             return true
-        }else if (item!!.itemId == R.id.action_excel_file) {
+        } else if (item!!.itemId == R.id.action_excel_file) {
             createExcelSheet()
             return true
         }
@@ -77,7 +76,7 @@ class BankAccountViewActivity : AppCompatActivity(), View.OnClickListener {
     private fun setAdapter() {
         if (mAccountAdapter == null) {
             mAccountAdapter = BankAccountViewAdapter(this, mAccountsList)
-        }else{
+        } else {
             mAccountAdapter!!.notifyDataSetChanged()
         }
         expandable_list_view.setAdapter(mAccountAdapter)
@@ -85,14 +84,25 @@ class BankAccountViewActivity : AppCompatActivity(), View.OnClickListener {
 
     override fun onClick(view: View?) {
         when (view!!.id) {
-            R.id.tv_amount -> launchTransactionviewActivity(view)
+            R.id.tv_edit_bank_account_info -> modifyBankAccountInfo(view)
+            R.id.tv_bank_account_amount -> launchTransactionViewActivity(view)
         }
     }
 
-    private fun launchTransactionviewActivity(view: View) {
-        // todo need to launh it specific to account no
-        val projectId = view.getTag(R.string.tag_project_id)
-        Toast.makeText(this, "Not Implement yet !! " + projectId, Toast.LENGTH_LONG).show()
+    private fun modifyBankAccountInfo(view: View) {
+        var accountID = view.getTag(R.string.tag_account_id).toString()
+        var intent = Intent(this, AddBankAccountActivity::class.java)
+        intent.putExtra(LedgerDefine.BANK_ACCOUNT_ADD_TYPE, LedgerDefine.BANK_ACCOUNT_MODIFY)
+        intent.putExtra(LedgerDefine.BANK_ACCOUNT_ID, accountID)
+        startActivity(intent)
+    }
+
+    private fun launchTransactionViewActivity(view: View) {
+        val accountID: String = view.getTag(R.string.tag_account_id) as String
+        val intent = Intent(mContext, TransactionViewActivity::class.java)
+        intent.putExtra(LedgerDefine.TRANSACTION_VIEW_TYPE, LedgerDefine.TRANSACTION_VIEW_TYPE_BANK_ACCOUNT)
+        intent.putExtra(LedgerDefine.ID, accountID)
+        startActivity(intent)
     }
 
     private fun getAccounts(): Boolean {
@@ -100,7 +110,7 @@ class BankAccountViewActivity : AppCompatActivity(), View.OnClickListener {
         mAccountsList.clear()
         val db = FirestoreDataBase().db
         val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyName()
-        Log.d(TAG, "companyID => " + companyID)
+        Log.d(TAG, "companyID => $companyID")
         db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_BANK_ACCOUNTS)
             .orderBy(LedgerDefine.PAYEE_NAME, Query.Direction.ASCENDING).get()
             .addOnCompleteListener(OnCompleteListener<QuerySnapshot> { task ->
@@ -110,6 +120,7 @@ class BankAccountViewActivity : AppCompatActivity(), View.OnClickListener {
                         Log.d(TAG, " document.get(\"name\")+ => " + document.get("name"))
                         setSetAccount(document);
                     }
+                    //FirestoreDataBase().updatePayeeNameUppercase(mAccountsList, mContext)
                     setAdapter()
                 } else {
                     Log.d(TAG, "Error getting documents: ", task.exception)
@@ -150,7 +161,7 @@ class BankAccountViewActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     var mDialog: ProgressDialog? = null
-    fun createExcelSheet() {
+    private fun createExcelSheet() {
 
         if (!isStoragePermissionGranted()) return
         mDialog = ProgressDialog.show(

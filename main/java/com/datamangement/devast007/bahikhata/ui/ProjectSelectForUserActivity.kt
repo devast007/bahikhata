@@ -26,7 +26,7 @@ class ProjectSelectForUserActivity : AppCompatActivity(), AdapterView.OnItemClic
         mContext = this
         supportActionBar!!.setTitle(R.string.select_projects)
 //        setSupportActionBar(toolbar)
-        listview.setOnItemClickListener(this)
+        listview.onItemClickListener = this
         getProjects()
     }
 
@@ -62,8 +62,7 @@ class ProjectSelectForUserActivity : AppCompatActivity(), AdapterView.OnItemClic
     private fun getProjects(): Boolean {
         val db = FirestoreDataBase().db
         val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyName()
-        Log.d(TAG, "companyID => " + companyID)
-        db.collection(LedgerDefine.COMPANIES_SLASH+ companyID + "/projects")
+        db.collection(LedgerDefine.COMPANIES_SLASH+ companyID + LedgerDefine.SLASH_PROJECTS)
             .get()
             .addOnCompleteListener(OnCompleteListener<QuerySnapshot> { task ->
                 if (task.isSuccessful) {
@@ -83,7 +82,6 @@ class ProjectSelectForUserActivity : AppCompatActivity(), AdapterView.OnItemClic
     }
 
     override fun onItemClick(p0: AdapterView<*>?, p1: View?, pos: Int, id: Long) {
-        Toast.makeText(mContext, "clicked", Toast.LENGTH_LONG).show()
         mProjectList!!.get(pos).isChecked  = !mProjectList!!.get(pos).isChecked
         mAdapter!!.notifyDataSetChanged()
     }
@@ -122,11 +120,8 @@ class ProjectSelectForUserActivity : AppCompatActivity(), AdapterView.OnItemClic
             }
 
             val projectDetailView = getItem(pos)
-            Log.d(TAG, "view " + view)
             var cb = view!!.findViewById<CheckBox>(R.id.checkbox_project_id)
             var tv = view!!.findViewById<TextView>(R.id.tv_project_name)
-            Log.d(TAG, "cb " + cb)
-            Log.d(TAG, "tv " + tv)
             cb.text = projectDetailView.projectID
             tv.text = projectDetailView.name
             cb.isChecked = projectDetailView.isChecked

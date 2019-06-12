@@ -20,6 +20,8 @@ import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.firestore.QueryDocumentSnapshot
 import com.google.firebase.firestore.QuerySnapshot
 import kotlinx.android.synthetic.main.activity_projects_view.*
+import java.util.*
+import kotlin.collections.ArrayList
 
 class ProjectsViewActivity : AppCompatActivity(), View.OnClickListener {
 
@@ -41,7 +43,7 @@ class ProjectsViewActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        getMenuInflater().inflate(R.menu.menu_add_button_view, menu)
+        menuInflater.inflate(R.menu.menu_add_button_view, menu)
         return true
     }
 
@@ -63,7 +65,7 @@ class ProjectsViewActivity : AppCompatActivity(), View.OnClickListener {
 
     override fun onClick(view: View?) {
         when (view!!.id) {
-            R.id.tv_amount -> launchTransactionviewActivity(view)
+            R.id.tv_amount -> launchTransactionViewActivity(view)
             R.id.tv_edit_project -> launchmodifyProject(view)
         }
     }
@@ -77,7 +79,7 @@ class ProjectsViewActivity : AppCompatActivity(), View.OnClickListener {
         startActivity(intent)
     }
 
-    private fun launchTransactionviewActivity(view: View) {
+    private fun launchTransactionViewActivity(view: View) {
         val projectId: String = view.getTag(R.string.tag_project_id) as String
         val intent = Intent(mContext, TransactionViewActivity::class.java)
         intent.putExtra(LedgerDefine.TRANSACTION_VIEW_TYPE, LedgerDefine.TRANSACTION_VIEW_TYPE_PROJECT)
@@ -90,7 +92,7 @@ class ProjectsViewActivity : AppCompatActivity(), View.OnClickListener {
         val db = FirestoreDataBase().db
         val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyName()
         Log.d(TAG, "companyID => " + companyID)
-        db.collection(LedgerDefine.COMPANIES_SLASH + companyID + "/projects")
+        db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_PROJECTS)
             .get()
             .addOnCompleteListener(OnCompleteListener<QuerySnapshot> { task ->
                 if (task.isSuccessful) {
@@ -99,8 +101,8 @@ class ProjectsViewActivity : AppCompatActivity(), View.OnClickListener {
                         Log.d(TAG, " document.get(\"name\")+ => " + document.get("name"))
                         setSetProject(document);
                     }
-                    // updating project ID first Time
-                    //FirestoreDataBase().createNewDocForProjects(mContext,mProjectsList);
+                    // setting timestamp
+                    //FirestoreDataBase().setTimeStampForProjects(mProjectsList, mContext)
                     setAdapter()
                 } else {
                     Log.d(TAG, "Error getting documents: ", task.exception)
@@ -124,16 +126,18 @@ class ProjectsViewActivity : AppCompatActivity(), View.OnClickListener {
             projectDetails.mainAmount = getStringFormDoc(document, LedgerDefine.MAIN_AMOUNT)
             projectDetails.mbNo = getStringFormDoc(document, LedgerDefine.MB_NO)
             projectDetails.head = getStringFormDoc(document, LedgerDefine.HEAD)
+            var timestamp = document.get(LedgerDefine.TIME_STAMP)
+            if (timestamp != null) projectDetails!!.timeStamp = timestamp as Date
             projectDetails.maintenace1stYearAmount =
-                    getStringFormDoc(document, LedgerDefine.MAINTENANCE_1ST_YEAR_AMOUNT)
+                getStringFormDoc(document, LedgerDefine.MAINTENANCE_1ST_YEAR_AMOUNT)
             projectDetails.maintenace2ndYearAmount =
-                    getStringFormDoc(document, LedgerDefine.MAINTENANCE_2ND_YEAR_AMOUNT)
+                getStringFormDoc(document, LedgerDefine.MAINTENANCE_2ND_YEAR_AMOUNT)
             projectDetails.maintenace3rdYearAmount =
-                    getStringFormDoc(document, LedgerDefine.MAINTENANCE_3RD_YEAR_AMOUNT)
+                getStringFormDoc(document, LedgerDefine.MAINTENANCE_3RD_YEAR_AMOUNT)
             projectDetails.maintenace4thYearAmount =
-                    getStringFormDoc(document, LedgerDefine.MAINTENANCE_4TH_YEAR_AMOUNT)
+                getStringFormDoc(document, LedgerDefine.MAINTENANCE_4TH_YEAR_AMOUNT)
             projectDetails.maintenace5thYearAmount =
-                    getStringFormDoc(document, LedgerDefine.MAINTENANCE_5TH_YEAR_AMOUNT)
+                getStringFormDoc(document, LedgerDefine.MAINTENANCE_5TH_YEAR_AMOUNT)
             mProjectsList.add(projectDetails)
         }
     }

@@ -60,6 +60,26 @@
                 android:label="@string/title_activity_bank_account_view"
                 android:theme="@style/AppTheme.NoActionBar">
         </activity>
+
+        <activity
+                android:name=".ui.MaterialViewActivity"
+                android:label="@string/material_view"
+                android:theme="@style/MaterialTheme"
+                >
+        </activity>
+
+        <activity
+                android:name=".ui.AddGSTActivity"
+                android:label="@string/add_gst"
+                android:theme="@style/AppTheme.NoActionBar"
+        >
+        </activity>
+
+        <activity
+                android:name=".ui.AddMaterialActivity"
+                android:label="@string/add_material"
+                android:theme="@style/AppTheme.NoActionBar">
+        </activity>
         <activity
                 android:name=".ui.AddBankAccountActivity"
                 android:label="@string/title_activity_add_bank_account"

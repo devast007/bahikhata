@@ -73,6 +73,7 @@
     <string name="select_projects">SELECT PROJECTS</string>
     <string name="done">Done</string>
     <string name="create_transaction">Create Transaction</string>
+    <string name="add_material">Add Material</string>
     <string name="dd">DD</string>
     <string name="mm">MM</string>
     <string name="yyyy">YYYY</string>
@@ -81,9 +82,9 @@
     <string name="give_sender_id">Give Sender ID.</string>
     <string name="select_project">Select Project .</string>
     <string name="Projects">PROJECTS</string>
-    <string name="select_sender">Select Sender ID.</string>
+    <string name="select_sender">Select Sender.</string>
     <string name="sender">SENDER</string>
-    <string name="select_receiver">select Receiver ID</string>
+    <string name="select_receiver">select Receiver</string>
     <string name="receiver">RECEIVER</string>
     <string name="transaction_amount">Give Transaction Amount.</string>
     <string name="title_sender">SELECT SENDER</string>
@@ -98,7 +99,7 @@
     <string name="month_should_be_between_1_to_12">Month Should Be Between 1 and 12 !</string>
     <string name="year_should_be_more_than_1900">Year Should Be More Than 1900 !</string>
     <string name="sender_and_receiver_same">Sender And Recevier Must Be Different !</string>
-    <string name="error_07">There some pronlem . Please contact to Admin!</string>
+    <string name="error_07">There some problem . Please contact to Admin!</string>
     <string name="error_08">Transation Not Possbile !</string>
     <string name="error_09">Transation failed !</string>
     <string name="error_10">Debit or Credit Account is Empty !</string>
@@ -121,6 +122,7 @@
     <string name="no">No</string>
     <string name="yes">Yes</string>
     <string name="tag_transaction_id">tag_transaction_id</string>
+    <string name="tag_material_id">tag_material_id</string>
     <string name="received">Received</string>
     <string name="sent">Sent</string>
     <string name="transaction_deleted">Transaction Deleted !</string>
@@ -180,4 +182,24 @@
     <string name="imps">IMPS</string>
     <string name="cheque">CHEQUE</string>
     <string name="loading_finished">LOADAING FINISHED!</string>
+    <string name="select_supplier">Select Supplier</string>
+    <string name="date">Date</string>
+    <string name="quantity">Quantity</string>
+    <string name="rate">Rate</string>
+    <string name="amount_rate_into_quantity">Amount ( Rate * Quantity )</string>
+    <string name="Material">Material</string>
+    <string name="material">Material</string>
+    <string name="rate_is_empty">Rate is empty!</string>
+    <string name="quantity_is_empty">Quantity is Empty!</string>
+    <string name="material_is_empty">Material is Emty!</string>
+    <string name="material_id">Material ID</string>
+    <string name="material_view">MATERIAL VIEW</string>
+    <string name="payee_name_is_empty">Payee Name Is empty !</string>
+    <string name="percentage">%</string>
+    <string name="cgst">CGST</string>
+    <string name="sgst">SGST</string>
+    <string name="gst">GST</string>
+    <string name="bill_amount">Bill Amount</string>
+    <string name="gst_amount_is_empty">GST amount is empty !</string>
+    <string name="add_gst">ADD GST INFO</string>
 </resources>

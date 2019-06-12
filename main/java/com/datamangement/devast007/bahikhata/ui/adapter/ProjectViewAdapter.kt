@@ -16,8 +16,8 @@ import com.datamangement.devast007.bahikhata.utils.ProjectDetails
 class ProjectViewAdapter(projectsViewActivity: ProjectsViewActivity, projectsList: ArrayList<ProjectDetails>) :
     ExpandableListAdapter {
 
-    val mProjectsViewActivity = projectsViewActivity
-    val mProjectsList = projectsList
+    private val mProjectsViewActivity = projectsViewActivity
+    private val mProjectsList = projectsList
     var mInflater: LayoutInflater =
         mProjectsViewActivity.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
 
@@ -91,6 +91,7 @@ class ProjectViewAdapter(projectsViewActivity: ProjectsViewActivity, projectsLis
         childHolder!!.tvM3rdYear.text = projectDetails.maintenace3rdYearAmount
         childHolder!!.tvM4thYear.text = projectDetails.maintenace4thYearAmount
         childHolder!!.tvM5thYear.text = projectDetails.maintenace5thYearAmount
+        childHolder!!.tvTimestamp.text = projectDetails.timeStamp.toString()
 
         childHolder.tvEditProject.visibility = View.VISIBLE
         childHolder.tvEditProject.setTag(R.string.tag_project_id, projectDetails.projectID)
@@ -145,25 +146,27 @@ class ProjectViewAdapter(projectsViewActivity: ProjectsViewActivity, projectsLis
     }
 
     class ChildHolder(view: View) {
-        var tvId = view.findViewById<TextView>(R.id.tv_project_id)
-        val tvName = view.findViewById<TextView>(R.id.tv_project_name)
-        val tvAmount = view.findViewById<TextView>(R.id.tv_amount)
-        var tvAddress = view.findViewById<TextView>(R.id.tv_project_address)
-        var tvDivision = view.findViewById<TextView>(R.id.tv_project_div)
-        val tvStartDate = view.findViewById<TextView>(R.id.tv_project_start_date)
-        val tvEndDate = view.findViewById<TextView>(R.id.tv_project_end_date)
-        val tvRemarks = view.findViewById<TextView>(R.id.tv_project_remarks)
+        var tvId: TextView = view.findViewById<TextView>(R.id.tv_project_id)
+        val tvName: TextView = view.findViewById<TextView>(R.id.tv_project_name)
+        val tvAmount: TextView = view.findViewById<TextView>(R.id.tv_amount)
+        var tvAddress: TextView = view.findViewById<TextView>(R.id.tv_project_address)
+        var tvDivision: TextView = view.findViewById<TextView>(R.id.tv_project_div)
+        val tvStartDate: TextView = view.findViewById<TextView>(R.id.tv_project_start_date)
+        val tvEndDate: TextView = view.findViewById<TextView>(R.id.tv_project_end_date)
+        val tvRemarks: TextView = view.findViewById<TextView>(R.id.tv_project_remarks)
 
-        val tvMbNo = view.findViewById<TextView>(R.id.tv_project_mb_no)
-        val tvHead = view.findViewById<TextView>(R.id.tv_project_head)
-        val tvMainAmount = view.findViewById<TextView>(R.id.tv_project_main_amount)
-        val tvM1stYear = view.findViewById<TextView>(R.id.tv_project_maintenance_amount_1st_year)
-        val tvM2ndYear = view.findViewById<TextView>(R.id.tv_project_maintenance_amount_2nd_year)
-        val tvM3rdYear = view.findViewById<TextView>(R.id.tv_project_maintenance_amount_3rd_year)
-        val tvM4thYear = view.findViewById<TextView>(R.id.tv_project_maintenance_amount_4th_year)
-        val tvM5thYear = view.findViewById<TextView>(R.id.tv_project_maintenance_amount_5th_year)
+        val tvMbNo: TextView = view.findViewById<TextView>(R.id.tv_project_mb_no)
+        val tvHead: TextView = view.findViewById<TextView>(R.id.tv_project_head)
+        val tvMainAmount: TextView = view.findViewById<TextView>(R.id.tv_project_main_amount)
+        val tvM1stYear: TextView = view.findViewById<TextView>(R.id.tv_project_maintenance_amount_1st_year)
+        val tvM2ndYear: TextView = view.findViewById<TextView>(R.id.tv_project_maintenance_amount_2nd_year)
+        val tvM3rdYear: TextView = view.findViewById<TextView>(R.id.tv_project_maintenance_amount_3rd_year)
+        val tvM4thYear: TextView = view.findViewById<TextView>(R.id.tv_project_maintenance_amount_4th_year)
+        val tvM5thYear: TextView = view.findViewById<TextView>(R.id.tv_project_maintenance_amount_5th_year)
 
-        val tvEditProject = view.findViewById<TextView>(R.id.tv_edit_project)
+        val tvEditProject: TextView = view.findViewById<TextView>(R.id.tv_edit_project)
+
+        val tvTimestamp: TextView = view.findViewById<TextView>(R.id.tv_time_stamp)
     }
 
 }

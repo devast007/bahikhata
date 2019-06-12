@@ -25,6 +25,18 @@ class LedgerDefine {
         const val EMAIL = "email"
         const val ACCESSIBLE_PROJECTS = "accessibleProjects"
 
+        // Material
+        const val MATERIAL_ID = "materialID"
+        const val RATE = "rate"
+        const val QUANTITY = "quantity"
+        const val MATERIAL = "material"
+        const val DATE: String = "date"
+
+        // GST
+        const val GST_ID = "gstID"
+        const val BILL_AMOUNT = "billAmount"
+        const val GST_AMOUNT = "gstAmount"
+        const val GST_PERCENTAGE = "gstPercentage"
 
         const val REMARK = "remark"
         const val DESIGNATION_ADMIN: Long = 0
@@ -53,20 +65,33 @@ class LedgerDefine {
         const val TRANSACTION_VIEW_TYPE: String = "TRANSACTION_VIEW_TYPE"
         const val TRANSACTION_VIEW_TYPE_USER: Int = 1
         const val TRANSACTION_VIEW_TYPE_PROJECT: Int = 2
-        const val TRANSACTION_VIEW_TYPE_ALL: Int = 3
+        const val TRANSACTION_VIEW_TYPE_BANK_ACCOUNT: Int = 3
+        const val TRANSACTION_VIEW_TYPE_ALL: Int = 4
+
         const val ID: String = "ID"
         const val MORE_INFO_TYPE: String = "MORE_INFO_TYPE"
         const val MORE_INFO_TYPE_USER: Int = 1
         const val MORE_INFO_TYPE_PROJECT: Int = 2
         const val MORE_INFO_TYPE_ACCOUNT: Int = 3
+
+        // Bank Account
+        const val BANK_ACCOUNT_ADD_TYPE: String = "BANK_ACCOUNT_ADD_TYPE"
+        const val BANK_ACCOUNT_ADD: Int = 1
+        const val BANK_ACCOUNT_MODIFY: Int = 2
         const val BANK_ACCOUNT_ID: String = "bankAccountID"
         const val BANK_ACCOUNT_NUMBER: String = "bankAccountNumber"
         const val PAYEE_NAME: String = "payeeName"
         const val IFSC_CODE: String = "ifscCode"
         const val BANK_ACCOUNT_BRANCH_NAME: String = "bankAccountBranchName"
 
+        // path
         const val COMPANIES_SLASH = "companies/"
         const val SLASH_BANK_ACCOUNTS = "/bankAccounts"
+        const val SLASH_MATERIALS = "/materials"
+        const val SLASH_USERS ="/users"
+        const val SLASH_PROJECTS ="/projects"
+        const val SLASH_GST = "/gst"
+
         const val DEBIT_ACCOUNT_ID: String = "DebitAccountID"
         const val CREDIT_ACCOUNT_ID: String = "CreditAccountID"
         const val PAYMENT_MODE: String = "paymentMode"
@@ -91,7 +116,7 @@ class LedgerDefine {
         const val UPI: String = "UPI"
         const val CHEQUE: String = "CHEQUE"
         const val OTHER: String = "OTHER"
-        val LOCAL_BROARDCAT_INTENT: String? = "LOCAL_BROARDCAT_INTENT"
+        val LOCAL_BROADCAST_INTENT: String? = "LOCAL_BROADCAST_INTENT"
         val INTENT_EXTRA_FILE_PATH: String? = "INTENT_EXTRA_FILE_PATH"
 
         // only for excelsheet

@@ -66,6 +66,7 @@ class GoogleSigninActivity : AppCompatActivity(), View.OnClickListener, GoogleAp
         tv_admin_all_users.setOnClickListener(this)
         tv_admin_all_transactions.setOnClickListener(this)
         tv_admin_all_accounts.setOnClickListener(this)
+        tv_admin_all_material.setOnClickListener(this)
 
         tv_users_normal.setOnClickListener(this)
         tv_users_supervisor.setOnClickListener(this)
@@ -129,11 +130,17 @@ class GoogleSigninActivity : AppCompatActivity(), View.OnClickListener, GoogleAp
             R.id.tv_admin_all_users -> launchUserView()
             R.id.tv_admin_all_transactions -> launchTransactionView(LedgerDefine.DESIGNATION_ADMIN)
             R.id.tv_admin_all_accounts -> launchAccountView()
+            R.id.tv_admin_all_material -> launchMaterialView()
 
             R.id.tv_users_supervisor -> launchTransactionView(LedgerDefine.DESIGNATION_SUPERVISOR)
             R.id.tv_users_normal -> launchTransactionView(LedgerDefine.DESIGNATION_NORMAL)
 
         }
+    }
+
+    private fun launchMaterialView() {
+        val intent = Intent(mContext, AddGSTActivity::class.java)
+        startActivity(intent)
     }
 
     private fun launchAccountView() {

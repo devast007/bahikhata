@@ -17,10 +17,7 @@ import com.datamangement.devast007.bahikhata.utils.LedgerSharePrefManger
 import com.google.android.gms.tasks.OnFailureListener
 import com.google.android.gms.tasks.OnSuccessListener
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
-import com.google.firebase.firestore.QuerySnapshot
+import com.google.firebase.firestore.*
 import kotlinx.android.synthetic.main.activity_add_project.*
 import java.util.*
 
@@ -55,7 +52,7 @@ class AddProjectActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     private fun getDataFromProjectID() {
-        var docRef = FirestoreDataBase().db.collection(LedgerDefine.COMPANIES_SLASH + mCompanyName + "/projects")
+        var docRef = FirestoreDataBase().db.collection(LedgerDefine.COMPANIES_SLASH + mCompanyName + LedgerDefine.SLASH_PROJECTS)
             .whereEqualTo(LedgerDefine.PROJECT_ID, mProjectID)
 
         docRef.get()
@@ -150,6 +147,7 @@ class AddProjectActivity : AppCompatActivity(), View.OnClickListener {
         project[LedgerDefine.REMARK] = projectNote
         project[LedgerDefine.START_DATE] = projectStartDate
         project[LedgerDefine.END_DATE] = projectEndDate
+        project[LedgerDefine.TIME_STAMP] =  FieldValue.serverTimestamp()
         project[LedgerDefine.MB_NO] = projectMBNo
         project[LedgerDefine.HEAD] = projectHead
         project[LedgerDefine.MAIN_AMOUNT] = projectMainAmount
@@ -166,7 +164,7 @@ class AddProjectActivity : AppCompatActivity(), View.OnClickListener {
             mProjectID = mIdPrefix + projectName.toUpperCase().replace(" ", "", true)
             project[LedgerDefine.AMOUNT] = 0
             project[LedgerDefine.PROJECT_ID] = mProjectID!!
-            var docRef = db.collection(LedgerDefine.COMPANIES_SLASH + companyName + "/projects").document(mProjectID!!)
+            var docRef = db.collection(LedgerDefine.COMPANIES_SLASH + companyName + LedgerDefine.SLASH_PROJECTS).document(mProjectID!!)
             Log.d(TAG, "docRef CRAETRE  $docRef")
 
             docRef.set(project)
@@ -179,7 +177,7 @@ class AddProjectActivity : AppCompatActivity(), View.OnClickListener {
                     btn_save.setText(R.string.failed)
                 })
         } else {
-            var docRef = db.collection(LedgerDefine.COMPANIES_SLASH + companyName + "/projects").document(mProjectID!!)
+            var docRef = db.collection(LedgerDefine.COMPANIES_SLASH + companyName + LedgerDefine.SLASH_PROJECTS).document(mProjectID!!)
             Log.d(TAG, "docRef for update $docRef")
 
             docRef.update(project)
@@ -202,7 +200,7 @@ class AddProjectActivity : AppCompatActivity(), View.OnClickListener {
     private var mIdPrefix: String? = null
 
     private fun fetchProjectIDPrefix() {
-        var docRef = FirestoreDataBase().db.collection(LedgerDefine.COMPANIES_SLASH + mCompanyName + "/projects")
+        var docRef = FirestoreDataBase().db.collection(LedgerDefine.COMPANIES_SLASH + mCompanyName + LedgerDefine.SLASH_PROJECTS)
             .orderBy(LedgerDefine.PROJECT_ID, Query.Direction.DESCENDING).limit(1)
         docRef.get()
             .addOnSuccessListener(OnSuccessListener<QuerySnapshot> {

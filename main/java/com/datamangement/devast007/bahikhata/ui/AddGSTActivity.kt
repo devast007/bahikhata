@@ -1,22 +1,24 @@
 package com.datamangement.devast007.bahikhata.ui
 
 import android.app.Activity
-import android.content.ContentValues
 import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
 import android.support.design.widget.Snackbar
 import android.support.v7.app.AppCompatActivity
+import android.text.Editable
 import android.text.TextUtils
+import android.text.TextWatcher
 import android.util.Log
 import android.view.View
 import android.view.inputmethod.InputMethodManager
-import android.widget.RadioButton
+import android.widget.ArrayAdapter
 import android.widget.TextView
 import android.widget.Toast
 import com.datamangement.devast007.bahikhata.R
+import com.datamangement.devast007.bahikhata.R.layout.activity_add_gst
 import com.datamangement.devast007.bahikhata.firestore.FirestoreDataBase
-import com.datamangement.devast007.bahikhata.ui.fragment.DialogFragmentToSelectUserOrProject
+import com.datamangement.devast007.bahikhata.ui.fragment.DialogFragmentToSelectUserOrProjectForGST
 import com.datamangement.devast007.bahikhata.utils.*
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.gms.tasks.OnFailureListener
@@ -25,59 +27,44 @@ import com.google.android.gms.tasks.Task
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
-import kotlinx.android.synthetic.main.activity_add_transaction.*
+import kotlinx.android.synthetic.main.activity_add_gst.*
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.HashMap
 
 
-class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
+class AddGSTActivity : AppCompatActivity(), View.OnClickListener {
 
-
-    private val TAG = "AddTransactionActivity"
+    private val TAG = "AddGSTActivity"
     private var mContext: Context? = null
     var mSignInProfile: SignInProfile? = null
 
     var mSelectedProject: ProjectDetails? = null
     var mSelectedSender: UserDetails? = null
     var mSelectedReceiver: UserDetails? = null
-    var mSelectedDebitAccount: BankAccountDetail? = null
-    var mSelectedCreditAccount: BankAccountDetail? = null
+    var mRate: Long = 0
+    var mQualtity: Long = 0
+
 
     private var mEditType: Int = -1
 
+    private val MATERIALS: Array<String> = arrayOf("SAND(BALU)", "GITTI", "CEMENT", "ROD(CHHAD)", "DEISEL")
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_add_transaction)
+        setContentView(activity_add_gst)
         mContext = this
-        toolbar.setTitle(R.string.create_transaction)
+        toolbar.setTitle(R.string.add_gst)
         setSupportActionBar(toolbar)
         tv_project_id.setOnClickListener(this)
         tv_sender_id.setOnClickListener(this)
-        tv_receiver_id.setOnClickListener(this)
-        tv_debit_account.setOnClickListener(this)
-        tv_credit_account.setOnClickListener(this)
         btn_save.setOnClickListener(this)
-        img_btn_clear_debit_account.setOnClickListener(this)
-        img_btn_clear_credit_account.setOnClickListener(this)
 
 
-
+        setDataForMaterialType()
         mSignInProfile = LedgerUtils.signInProfile
         getUsersList()
-        if (mSignInProfile!!.isAdmin) {
-            getProjectList()
-            getAccountList()
-            tv_debit_account.visibility = View.VISIBLE
-            tv_credit_account.visibility = View.VISIBLE
-            rg_transaction_mode.visibility = View.VISIBLE
-            tv_sender_id.isEnabled = true
-        } else {
-            tv_debit_account.visibility = View.GONE
-            tv_credit_account.visibility = View.GONE
-            rg_transaction_mode.visibility = View.GONE
-            tv_sender_id.isEnabled = false
-        }
+        getProjectList()
         mEditType = intent.getIntExtra(LedgerDefine.TRANSACTION_EDIT_TYPE, -1)
         if (mEditType == LedgerDefine.TRANSACTION_EDIT_TYPE_MODIFY) {
             setDataToUpdate()
@@ -86,95 +73,106 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
         }
     }
 
-    private var mTransactionIdToUpdate: String? = null
 
-    private var mReceiverIdToUpdate: String? = null
+    private fun setDataForMaterialType() {
+
+        var adapter = ArrayAdapter<String>(
+            mContext,
+            android.R.layout.simple_dropdown_item_1line, MATERIALS
+        )
+        auto_tv_material.threshold = 1
+        auto_tv_material.setAdapter(adapter)
+        Log.d(TAG, "setDataForMaterialType")
+        auto_tv_material.onFocusChangeListener =
+            View.OnFocusChangeListener { v, hasFocus -> if (hasFocus) auto_tv_material.showDropDown() }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        et_gst_amount.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) {
+                if (et_gst_percentage.isFocused) {
+                    return
+                }
+                et_gst_percentage.setText("")
+                if (s != null && s.isNotEmpty()) {
+                    val gstAmount = s.toString().toFloat()
+                    if (et_amount.text.isNotEmpty()) {
+                        val billAmount = et_amount.text.toString().toFloat()
+                        val percentage: Float = ((gstAmount * 100) / billAmount).toFloat()
+                        et_gst_percentage.setText(String.format("%.2f", percentage))
+                    }
+                }
+            }
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+            }
+
+        })
+
+        et_gst_percentage.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) {
+                if (et_gst_amount.isFocused) {
+                    return
+                }
+                et_gst_amount.setText("")
+                if (s != null && s.isNotEmpty()) {
+                    val percentage = s.toString().toFloat()
+                    if (et_amount.text.isNotEmpty()) {
+                        val billAmount = et_amount.text.toString().toFloat()
+                        val gstAmount: Float = ((billAmount * percentage) / 100).toFloat()
+                        et_gst_amount.setText(String.format("%.2f", gstAmount))
+                    }
+                }
+            }
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+            }
+
+        })
+    }
+
+    private var mGSTIdToUpdate: String? = null
+
     private var mSenderIdToUpdate: String? = null
 
     private fun setDataToUpdate() {
-        mTransactionIdToUpdate = intent.getStringExtra(LedgerDefine.TRANSACTION_ID)
+        mGSTIdToUpdate = intent.getStringExtra(LedgerDefine.GST_ID)
+        var material = intent.getStringExtra(LedgerDefine.MATERIAL)
+        var billAmount = intent.getStringExtra(LedgerDefine.BILL_AMOUNT)
+        var gstAmount = intent.getStringExtra(LedgerDefine.GST_AMOUNT)
+        var gstPercentage = intent.getStringExtra(LedgerDefine.GST_PERCENTAGE)
         var projectID = intent.getStringExtra(LedgerDefine.PROJECT_ID)
-        var amount = intent.getStringExtra(LedgerDefine.AMOUNT)
         var senderId = intent.getStringExtra(LedgerDefine.SENDER_ID)
-        var receiverId = intent.getStringExtra(LedgerDefine.RECEIVER_ID)
-        var debitedAccount = intent.getStringExtra(LedgerDefine.DEBIT_ACCOUNT_ID)
-        var creditedAccount = intent.getStringExtra(LedgerDefine.CREDIT_ACCOUNT_ID)
-        var paymentMode = intent.getStringExtra(LedgerDefine.PAYMENT_MODE)
         var remarks = intent.getStringExtra(LedgerDefine.REMARK)
-        var date = intent.getStringExtra(LedgerDefine.TRANSACTION_DATE)
+        var date = intent.getStringExtra(LedgerDefine.DATE)
 
-        if (!isEmpty(projectID)) {
-            mSelectedProject = ProjectDetails()
-            mSelectedProject!!.projectID = projectID
-            tv_project_id.text = projectID
-        }
-        et_amount.setText(amount)
+        mSelectedProject = ProjectDetails()
+        mSelectedProject!!.projectID = projectID
+        tv_project_id.text = projectID
 
-        mSelectedReceiver = UserDetails()
-        mSelectedReceiver!!.userID = receiverId
-        mReceiverIdToUpdate = receiverId
-        tv_receiver_id.text = receiverId
+        auto_tv_material.setText(material)
+        et_gst_amount.setText(gstAmount)
+        et_gst_percentage.setText(gstPercentage)
+        et_amount.setText(billAmount)
+
 
         mSelectedSender = UserDetails()
         mSelectedSender!!.userID = senderId
         mSenderIdToUpdate = senderId
         tv_sender_id.text = senderId
 
-        if (!isEmpty(debitedAccount)) {
-            mSelectedDebitAccount = BankAccountDetail()
-            mSelectedDebitAccount!!.id = debitedAccount
-            tv_debit_account.text = debitedAccount
-        }
-
-        if (!isEmpty(creditedAccount)) {
-            mSelectedCreditAccount = BankAccountDetail()
-            mSelectedCreditAccount!!.id = creditedAccount
-            tv_credit_account.text = creditedAccount
-        }
-        Log.d(TAG, "edit paymentMode " + paymentMode)
-        if (!isEmpty(paymentMode)) {
-            Log.d(TAG, "edit paymentMode not empty")
-            if (paymentMode == LedgerDefine.RTGS) {
-                Log.d(TAG, "edit paymentMode rtgs detected")
-                rb_rtgs.isChecked = true
-            } else if (paymentMode == LedgerDefine.NEFT) {
-                rb_neft.isChecked = true
-            } else if (paymentMode == LedgerDefine.IMPS) {
-                rb_imps.isChecked = true
-            } else if (paymentMode == LedgerDefine.UPI) {
-                rb_upi.isChecked = true
-            } else if (paymentMode == LedgerDefine.CHEQUE) {
-                rb_cheque_book.isChecked = true
-            } else if (paymentMode == LedgerDefine.OTHER) {
-                rb_other.isChecked = true
-            }
-        }
         et_remarks.setText(remarks)
 
-        Log.d(TAG, "edit date " + date)
         et_day.setText(date.substring(6, 8))
         et_month.setText(date.substring(4, 6))
         et_year.setText(date.substring(0, 4))
-    }
-
-    private fun getAccountList() {
-        var projects: ArrayList<String> = ArrayList<String>()
-
-        var db = FirestoreDataBase().db
-
-        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyName()
-
-        db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_BANK_ACCOUNTS)
-            .get()
-            .addOnCompleteListener(OnCompleteListener<QuerySnapshot> { task ->
-                if (task.isSuccessful) {
-                    manageAccounts(task)
-                } else {
-                    Log.d(TAG, "Error getting documents: ", task.exception)
-                    Toast.makeText(mContext, R.string.error_01, Toast.LENGTH_LONG).show()
-                }
-            })
-
     }
 
     private fun manageProjects(task: Task<QuerySnapshot>) {
@@ -184,17 +182,6 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
             project.projectID = document.get(LedgerDefine.PROJECT_ID) as String
             project.name = document.get(LedgerDefine.NAME) as String
             mProjectList!!.add(project)
-        }
-    }
-
-    private fun manageAccounts(task: Task<QuerySnapshot>) {
-
-        for (document in task.result!!) {
-            var account: BankAccountDetail = BankAccountDetail()
-            account.id = document.get(LedgerDefine.BANK_ACCOUNT_ID) as String
-            account.accountNo = document.get(LedgerDefine.BANK_ACCOUNT_NUMBER) as String
-            account.payee = document.get(LedgerDefine.PAYEE_NAME) as String
-            mBankAccountList!!.add(account)
         }
     }
 
@@ -209,31 +196,35 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
         when (view!!.id) {
             R.id.tv_project_id -> openDialog(LedgerDefine.SELECTION_TYPE_PROJECT)
             R.id.tv_sender_id -> openDialog(LedgerDefine.SELECTION_TYPE_SENDER)
-            R.id.tv_receiver_id -> openDialog(LedgerDefine.SELECTION_TYPE_RECEIVER)
-            R.id.tv_debit_account -> openDialog(LedgerDefine.SELECTION_TYPE_DEBIT_ACCOUNT)
-            R.id.tv_credit_account -> openDialog(LedgerDefine.SELECTION_TYPE_CREDIT_ACCOUNT)
             R.id.btn_save -> saveBtnClicked()
-            R.id.img_btn_clear_debit_account -> clearDebitAccount()
-            R.id.img_btn_clear_credit_account -> clearCreditAccount()
         }
-    }
-
-    private fun clearCreditAccount() {
-        mSelectedCreditAccount = null
-        tv_credit_account.setText(null)
-    }
-
-    private fun clearDebitAccount() {
-        mSelectedDebitAccount = null
-        tv_debit_account.text = null
     }
 
     private fun saveBtnClicked() {
         hideKeyboard()
-        var amount = et_amount.text.toString()
+        var material = auto_tv_material.text.toString()
+        var billAmount = et_amount.text.toString()
+        var gstAmount = et_gst_amount.text.toString()
+        var gstPercentage = et_gst_percentage.text.toString()
         var remarks = et_remarks.text.toString()
 
-        if (!mSignInProfile!!.isAdmin && (mSelectedProject == null || isEmpty(mSelectedProject!!.projectID!!))) {
+
+        if (isEmpty(material)) {
+            toast(R.string.material_is_empty)
+            return
+        }
+
+        if (isEmpty(billAmount)) {
+            toast(R.string.amount_is_empty)
+            return
+        }
+
+        if (isEmpty(gstAmount)) {
+            toast(R.string.gst_amount_is_empty)
+            return
+        }
+
+        if (mSelectedProject == null || isEmpty(mSelectedProject!!.projectID!!)) {
             toast(R.string.project_name_empty)
             return
         }
@@ -243,181 +234,74 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
             return
         }
 
-        if (mSelectedReceiver == null) {
-            toast(R.string.receiver_name_is_empty)
-            return
-        }
-
-        if (isEmpty(amount)) {
-            toast(R.string.amount_is_empty)
-            return
-        }
-
-
-        if (mSelectedReceiver!!.userID == mSelectedSender!!.userID) {
-            toast(R.string.sender_and_receiver_same)
-            return
-        }
 
         var date: String? = getDateFormatted(et_day.text.toString(), et_month.text.toString(), et_year.text.toString())
         // elvis operator if(date == null ) return null
             ?: return
 
-        var transactionMap: HashMap<String, Any> = HashMap<String, Any>()
+        var gstMap: HashMap<String, Any> = HashMap<String, Any>()
 
         // loginId
         var loggedInID: String? = null
         if (mSignInProfile!!.isAdmin) {
             loggedInID = mSignInProfile!!.adminID
-            transactionMap[LedgerDefine.VERIFIED] = true
         } else if (mSignInProfile!!.isSupervisor) {
             loggedInID = mSignInProfile!!.supervisorID
-            transactionMap[LedgerDefine.VERIFIED] = false
         } else {
             toast(R.string.error_07)
             return
         }
-        transactionMap[LedgerDefine.LOGGED_IN_ID] = loggedInID
+
+        gstMap[LedgerDefine.LOGGED_IN_ID] = loggedInID
+
+
+        // material
+        gstMap[LedgerDefine.MATERIAL] = material
+
+        // rate
+        gstMap[LedgerDefine.BILL_AMOUNT] = billAmount
+
+        // quantity
+        gstMap[LedgerDefine.GST_AMOUNT] = gstAmount
+
         // amount
-        transactionMap[LedgerDefine.AMOUNT] = amount.toLong()
+        gstMap[LedgerDefine.GST_PERCENTAGE] = gstPercentage
 
-        // debit/credit account
-        if (mSelectedDebitAccount != null) {
-            val debitAccountID = mSelectedDebitAccount!!.id
-            transactionMap[LedgerDefine.DEBIT_ACCOUNT_ID] = debitAccountID
-
-        } else {
-            transactionMap[LedgerDefine.DEBIT_ACCOUNT_ID] = ""
-        }
-
-        if (mSelectedCreditAccount != null) {
-            val creditAccountID = mSelectedCreditAccount!!.id
-            transactionMap[LedgerDefine.CREDIT_ACCOUNT_ID] = creditAccountID
-        } else {
-            transactionMap[LedgerDefine.CREDIT_ACCOUNT_ID] = ""
-        }
-
-        var checkedButton = rg_transaction_mode.checkedRadioButtonId
-        var transactionMode = findViewById<RadioButton>(checkedButton).text.toString()
-        transactionMap[LedgerDefine.PAYMENT_MODE] = transactionMode
 
         //project
-        if (mSelectedProject != null && !isEmpty(mSelectedProject!!.projectID)) {
-            transactionMap[LedgerDefine.PROJECT_ID] = mSelectedProject!!.projectID
-        }
+        gstMap[LedgerDefine.PROJECT_ID] = mSelectedProject!!.projectID
+
         //sender
-        transactionMap[LedgerDefine.SENDER_ID] = mSelectedSender!!.userID
+        gstMap[LedgerDefine.SENDER_ID] = mSelectedSender!!.userID
 
-        //receiver
-        transactionMap[LedgerDefine.RECEIVER_ID] = mSelectedReceiver!!.userID
 
-        // transaction date
-        transactionMap[LedgerDefine.TRANSACTION_DATE] = date!!
+        //  date
+        gstMap[LedgerDefine.DATE] = date!!
 
         // timestamp
-        transactionMap[LedgerDefine.TIME_STAMP] = FieldValue.serverTimestamp()
+        gstMap[LedgerDefine.TIME_STAMP] = FieldValue.serverTimestamp()
 
-        // transaction type
-        var transactionType: Int = -1
-        var senderDesignation = mSelectedSender!!.designation
-        var receiverDesignation = mSelectedReceiver!!.designation
-        if (senderDesignation == LedgerDefine.DESIGNATION_ADMIN) {
-            if (receiverDesignation == LedgerDefine.DESIGNATION_SUPERVISOR) {
-                transactionType = LedgerDefine.TRANSACTION_TYPE_ADMIN
-                transactionMap[LedgerDefine.PROJECT_ID] = ""
-            } else if (receiverDesignation == LedgerDefine.DESIGNATION_NORMAL) {
-                transactionType = LedgerDefine.TRANSACTION_TYPE_NORMAL
-                if (mSelectedProject == null || isEmpty(mSelectedProject!!.projectID)) {
-                    toast(R.string.project_name_empty)
-                    return
-                }
-            } else {
-                toast(R.string.error_08)
-                return
-            }
 
-        } else if (senderDesignation == LedgerDefine.DESIGNATION_SUPERVISOR) {
-            if (receiverDesignation == LedgerDefine.DESIGNATION_NORMAL) {
-                transactionType = LedgerDefine.TRANSACTION_TYPE_NORMAL
-                if (mSelectedProject == null || isEmpty(mSelectedProject!!.projectID)) {
-                    toast(R.string.project_name_empty)
-                    return
-                }
-            } else if (receiverDesignation == LedgerDefine.DESIGNATION_SUPERVISOR) {
-                transactionType = LedgerDefine.TRANSACTION_TYPE_SUPERVISOR
-                transactionMap[LedgerDefine.PROJECT_ID] = ""
-            } else if (receiverDesignation == LedgerDefine.DESIGNATION_ADMIN) {
-                transactionType = LedgerDefine.TRANSACTION_TYPE_ADMIN
-                transactionMap[LedgerDefine.PROJECT_ID] = ""
-            } else {
-                toast(R.string.error_08)
-                return
-            }
-
-        } else if (senderDesignation == LedgerDefine.DESIGNATION_NORMAL) {
-            if (receiverDesignation == LedgerDefine.DESIGNATION_ADMIN) {
-                transactionType = LedgerDefine.TRANSACTION_TYPE_NORMAL
-                if (mSelectedProject == null || isEmpty(mSelectedProject!!.projectID)) {
-                    toast(R.string.project_name_empty)
-                    return
-                }
-            } else {
-                toast(R.string.error_08)
-                return
-            }
-
-        }
-        transactionMap[LedgerDefine.TRANSACTION_TYPE] = transactionType
-        transactionMap[LedgerDefine.REMARK] = remarks
+        //remarks
+        gstMap[LedgerDefine.REMARK] = remarks
 
         //verified todo
         if (mEditType == LedgerDefine.TRANSACTION_EDIT_TYPE_MODIFY) {
-            updateTransactionData(transactionMap)
+            updateGSTData(gstMap)
         } else {
-            saveDataToFireStore(transactionMap)
+            saveDataToFireStore(gstMap)
         }
-
-        var projectID:String? = ""
-        if(mSelectedProject != null ) projectID = mSelectedProject!!.projectID
-        var creditID:String = ""
-        if(mSelectedCreditAccount != null ) creditID = mSelectedCreditAccount!!.id
-        savePreferenceToDB(
-            projectID,
-            mSelectedReceiver!!.userID,
-            creditID,
-            remarks
-        )
 
     }
 
-    private fun savePreferenceToDB(projectID: String?, userID: String, creditAccount: String, remarks: String) {
-        var values = ContentValues()
-        values.put(LedgerDefine.RECEIVER_ID, userID)
-        values.put(LedgerDefine.PROJECT_ID, projectID)
-        values.put(LedgerDefine.CREDIT_ACCOUNT_ID, creditAccount)
-        values.put(LedgerDefine.REMARK, remarks)
-        val selectionArgs = Array<String>(1) { userID }
-        val count = mContext!!.contentResolver.update(
-            SqlDBFile.CONTENT_URI_TABLE_SUGGESTION,
-            values,
-            LedgerDefine.RECEIVER_ID + " =?",
-            selectionArgs
-        )
-        Log.d(TAG, "savePreferenceToDB update count = "+count)
-        if (count <= 0) {
-            mContext!!.contentResolver.insert(SqlDBFile.CONTENT_URI_TABLE_SUGGESTION, values)
-            Log.d(TAG, "savePreferenceToDB inserted ")
-        }
-    }
-
-    private fun updateTransactionData(transactionMap: HashMap<String, Any>) {
+    private fun updateGSTData(transactionMap: HashMap<String, Any>) {
         val db = FirebaseFirestore.getInstance()
         val companyName = LedgerSharePrefManger(mContext).getCompanyName()
         btn_save.isEnabled = false
         btn_save.setTextColor(Color.YELLOW)
         btn_save.setText(R.string.saving)
-        var docRef = db.collection(LedgerDefine.COMPANIES_SLASH + companyName + "/transactions")
-            .document(mTransactionIdToUpdate!!)
+        var docRef = db.collection(LedgerDefine.COMPANIES_SLASH + companyName + LedgerDefine.SLASH_MATERIALS)
+            .document(mGSTIdToUpdate!!)
         docRef.update(transactionMap)
             .addOnSuccessListener(OnSuccessListener<Void> {
                 Log.d(TAG, "DocumentSnapshot successfully written!")
@@ -434,15 +318,15 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
 
     }
 
-    private fun saveDataToFireStore(transactionMap: HashMap<String, Any>) {
+    private fun saveDataToFireStore(gstMap: HashMap<String, Any>) {
         val db = FirebaseFirestore.getInstance()
         val companyName = LedgerSharePrefManger(mContext).getCompanyName()
         btn_save.isEnabled = false
         btn_save.setTextColor(Color.YELLOW)
         btn_save.setText(R.string.saving)
-        var docRef = db.collection(LedgerDefine.COMPANIES_SLASH + companyName + "/transactions").document()
-        transactionMap[LedgerDefine.TRANSACTION_ID] = docRef.id
-        docRef.set(transactionMap)
+        var docRef = db.collection(LedgerDefine.COMPANIES_SLASH + companyName + LedgerDefine.SLASH_GST).document()
+        gstMap[LedgerDefine.GST_ID] = docRef.id
+        docRef.set(gstMap)
             .addOnSuccessListener(OnSuccessListener<Void> {
                 Log.d(TAG, "DocumentSnapshot successfully written!")
                 btn_save.setTextColor(Color.parseColor("#FF7C7B7B"))
@@ -466,11 +350,10 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
                 btn_save.isEnabled = true
                 btn_save.setTextColor(Color.BLACK)
                 btn_save.setText(R.string.save)
-                openDialog(LedgerDefine.SELECTION_TYPE_RECEIVER)
             }
         snackbar.setActionTextColor(Color.BLUE)
         val sbView = snackbar.view
-        sbView.setBackgroundColor(Color.GREEN)
+        sbView.setBackgroundColor(Color.parseColor("#FFF851A7"))
         val textView = sbView.findViewById<View>(android.support.design.R.id.snackbar_text) as TextView
         textView.setTextColor(Color.BLACK)
         snackbar.show()
@@ -521,8 +404,8 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     private fun openDialog(type: Int) {
-        var fm = getSupportFragmentManager()
-        var dFragment = DialogFragmentToSelectUserOrProject()
+        var fm = supportFragmentManager
+        var dFragment = DialogFragmentToSelectUserOrProjectForGST()
         var bundle = Bundle()
         bundle.putInt(LedgerDefine.KEY_SELECTION_TYPE, type)
         dFragment.arguments = bundle
@@ -606,16 +489,11 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
 
             if (isAdmin) {
                 if (mEditType === LedgerDefine.TRANSACTION_EDIT_TYPE_MODIFY) {
-                    if (tempId == mReceiverIdToUpdate) {
-                        mSelectedReceiver = userDetails
-
-                        tv_receiver_id.text = userDetails.userID + "\n" + userDetails.name
-                    } else if (tempId == mSenderIdToUpdate) {
+                    if (tempId == mSenderIdToUpdate) {
                         mSelectedSender = userDetails
                         tv_sender_id.text = userDetails.userID + "\n" + userDetails.name
                     }
                 }
-                mReceiverList!!.add(userDetails)
                 mSenderList!!.add(userDetails)
 
             } else if (isSuperVisor) {
@@ -660,18 +538,17 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
 
     var mSenderList: ArrayList<UserDetails>? = ArrayList<UserDetails>()
     var mReceiverList: ArrayList<UserDetails>? = ArrayList<UserDetails>()
-    var mBankAccountList: ArrayList<BankAccountDetail>? = ArrayList<BankAccountDetail>()
     var mProjectList: ArrayList<ProjectDetails>? = ArrayList<ProjectDetails>()
 
     private fun hideKeyboard() {
         val imm = mContext!!.getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
         //Find the currently focused view, so we can grab the correct window token from it.
-        var view = getCurrentFocus()
+        var view = currentFocus
         //If no view currently has focus, create a new one, just so we can grab a window token from it
         if (view == null) {
             view = View(mContext);
         }
-        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        imm.hideSoftInputFromWindow(view.windowToken, 0);
     }
 
 }

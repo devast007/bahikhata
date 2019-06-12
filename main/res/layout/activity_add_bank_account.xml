@@ -74,7 +74,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:padding="4dp"
-                            android:inputType="text"
+                            android:inputType="textCapCharacters"
                             android:hint="@string/give_payee_name"
                             android:textSize="18sp"/>
                 </android.support.design.widget.TextInputLayout>

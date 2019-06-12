@@ -1,5 +1,7 @@
 package com.datamangement.devast007.bahikhata.utils
 
+import java.util.*
+
 class ProjectDetails {
     var name: String = ""
         get() = field
@@ -99,4 +101,11 @@ class ProjectDetails {
         set(value) {
             field = value
         }
+
+    var timeStamp: Date? = null
+        get() = field
+        set(value) {
+            field = value
+        }
+
 }
