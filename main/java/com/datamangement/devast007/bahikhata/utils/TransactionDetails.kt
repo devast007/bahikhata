@@ -49,7 +49,7 @@ class TransactionDetails {
         set(value) {
             field = value
         }
-    var timeStamp: Date? = null
+    var timeStamp: String = ""
         get() = field
         set(value) {
             field = value
@@ -86,4 +86,12 @@ class TransactionDetails {
         set(value) {
             field = value
         }
+
+// this is not a firestore data , it is for addition
+    var isChecked: Boolean = false
+        get() = field
+        set(value) {
+            field = value
+        }
+
 }

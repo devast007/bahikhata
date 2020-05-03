@@ -9,10 +9,7 @@ import android.util.Log
 import android.widget.Toast
 import com.datamangement.devast007.bahikhata.R
 import com.datamangement.devast007.bahikhata.firestore.FirestoreDataBase
-import com.datamangement.devast007.bahikhata.utils.LedgerDefine
-import com.datamangement.devast007.bahikhata.utils.LedgerSharePrefManger
-import com.datamangement.devast007.bahikhata.utils.LedgerUtils
-import com.datamangement.devast007.bahikhata.utils.MaterialDetails
+import com.datamangement.devast007.bahikhata.utils.*
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.firestore.QuerySnapshot
 import jxl.Workbook
@@ -27,7 +24,7 @@ import java.io.File
 import java.util.*
 import kotlin.collections.HashMap
 
-class MaterialsExcelSheet(context: Context?, name: String?, materialsList: ArrayList<MaterialDetails>) {
+class GstExcelSheet(context: Context?, name: String?, gstLists: ArrayList<GstDetails>) {
 
 
     companion object {
@@ -37,13 +34,13 @@ class MaterialsExcelSheet(context: Context?, name: String?, materialsList: Array
         private const val C_DATE: Int = 1
         private const val C_MATERIAL: Int = 2
 
-        private const val C_RATE: Int = 3
+        private const val C_GST_TAX: Int = 3
 
-        private const val C_QUANTITY: Int = 4
+        private const val C_GST_TAX_PERCENTAGE: Int = 4
 
-        private const val C_AMOUNT: Int = 5
+        private const val C_BILL_AMOUNT: Int = 5
 
-        private const val C_SENDER_NAME: Int = 6
+        private const val C_SUPPLIER_NAME: Int = 6
 
         private const val C_RECEIVER_NAME: Int = 7
 
@@ -51,18 +48,18 @@ class MaterialsExcelSheet(context: Context?, name: String?, materialsList: Array
 
         private const val C_REMARKS: Int = 9
 
-        private const val C_MATERIAL_ID: Int = 10
+        private const val C_GST_ID: Int = 10
 
         private const val C_TIMESTAMP: Int = 11
 
-        private const val C_SENDER_ID: Int = 12
+        private const val C_SUPPLIER_ID: Int = 12
 
         private const val C_RECEIVER_ID: Int = 13
 
         private const val C_LOGGED_ID: Int = 14
     }
 
-    private val mMaterialsList = materialsList
+    private val mGstList = gstLists
     val mContext = context
     val mName = name
 
@@ -78,7 +75,7 @@ class MaterialsExcelSheet(context: Context?, name: String?, materialsList: Array
         val sd = File(Environment.getExternalStorageDirectory(), "BahiKhata")
         val time = DateFormat.format("yyyy_MM_dd_HH_mm_ss", Calendar.getInstance().time).toString()
         log(" time =  $time")
-        val csvFile = mName + "_Materials_" + time + ".xls"
+        val csvFile = mName + "_GST_" + time + ".xls"
 
         val bahiKhata = File(sd.absolutePath)
         log(" csvFile=  $csvFile")
@@ -173,40 +170,45 @@ class MaterialsExcelSheet(context: Context?, name: String?, materialsList: Array
         cellFormat.setBackground(Colour.WHITE)
         cellFormat.setBorder(Border.ALL, BorderLineStyle.HAIR)
 
-        val size = mMaterialsList.size
+        val size = mGstList.size
 
         for (i in 0 until size) {
-            var materialDetails = mMaterialsList.get(i)
+            var gstDetails = mGstList.get(i)
             val row = i + 2; // actual data start position
 
             mSheet!!.addCell(Number(C_SL_NO, row, (row - 1).toDouble(), cellFormat)) // serial no
-            mSheet!!.addCell(Label(C_SENDER_ID, row, materialDetails.senderId, cellFormat))
-            mSheet!!.addCell(Label(Companion.C_SENDER_NAME, row, mUsersMap[materialDetails.senderId.substring(2)], cellFormat))
+            mSheet!!.addCell(Label(C_SUPPLIER_ID, row, gstDetails.supplierID, cellFormat))
+            mSheet!!.addCell(Label(Companion.C_SUPPLIER_NAME, row, mUsersMap[getUserId(gstDetails.supplierID)], cellFormat))
 
-            mSheet!!.addCell(Label(C_RECEIVER_ID, row, materialDetails.receiverId, cellFormat))
-            mSheet!!.addCell(Label(C_RECEIVER_NAME, row, mUsersMap[materialDetails.receiverId.substring(2)], cellFormat))
+            mSheet!!.addCell(Label(C_RECEIVER_ID, row, gstDetails.receiverId, cellFormat))
+            mSheet!!.addCell(Label(C_RECEIVER_NAME, row, mUsersMap[getUserId(gstDetails.receiverId)], cellFormat))
 
-            mSheet!!.addCell(Number(C_QUANTITY, row, materialDetails.quantity.toDouble(), cellFormat))
-            mSheet!!.addCell(Number(C_RATE, row, materialDetails.rate.toDouble(), cellFormat))
-            mSheet!!.addCell(Number(C_AMOUNT, row, materialDetails.amount.toDouble(), cellFormat))
-            mSheet!!.addCell(Label(C_PROJECT_ID, row, materialDetails.projectId, cellFormat))
+            mSheet!!.addCell(Number(C_GST_TAX_PERCENTAGE, row, gstDetails.gstTaxPercent.toDouble(), cellFormat))
+            mSheet!!.addCell(Number(C_GST_TAX, row, gstDetails.gstTax.toDouble(), cellFormat))
+            mSheet!!.addCell(Number(C_BILL_AMOUNT, row, gstDetails.billAmount.toDouble(), cellFormat))
+            mSheet!!.addCell(Label(C_PROJECT_ID, row, gstDetails.projectId, cellFormat))
             mSheet!!.addCell(
                 Label(
                     C_DATE,
                     row,
-                    LedgerUtils.getConvertDate(materialDetails.date),
+                    LedgerUtils.getConvertDate(gstDetails.date),
                     cellFormat
                 )
             )
-            mSheet!!.addCell(Label(C_MATERIAL_ID, row, materialDetails.materialID, cellFormat))
-            mSheet!!.addCell(Label(C_MATERIAL, row, materialDetails.material, cellFormat))
-            mSheet!!.addCell(Label(C_TIMESTAMP, row, materialDetails.timeStamp.toString(), cellFormat))
-            mSheet!!.addCell(Label(C_LOGGED_ID, row, materialDetails.loggedInID, cellFormat))
-            mSheet!!.addCell(Label(C_REMARKS, row, materialDetails.remarks, cellFormat))
+            mSheet!!.addCell(Label(C_GST_ID, row, gstDetails.gstId, cellFormat))
+            mSheet!!.addCell(Label(C_MATERIAL, row, gstDetails.material, cellFormat))
+            mSheet!!.addCell(Label(C_TIMESTAMP, row, gstDetails.timeStamp.toString(), cellFormat))
+            mSheet!!.addCell(Label(C_LOGGED_ID, row, gstDetails.loggedInID, cellFormat))
+            mSheet!!.addCell(Label(C_REMARKS, row, gstDetails.remarks, cellFormat))
         }
 
     }
+    private fun getUserId(userAccount: String): String? {
+        var userId: String = ""
+        userId = userAccount.substring(2)
+        return userId
 
+    }
 
     private fun addColumns() {
         val cellFont = WritableFont(WritableFont.COURIER, 12)
@@ -218,15 +220,15 @@ class MaterialsExcelSheet(context: Context?, name: String?, materialsList: Array
         addColumn(C_SL_NO, 1, mContext!!.getString(R.string.serial_no), cellFormat, mSheet!!)
         addColumn(C_DATE, 1, LedgerDefine.DATE, cellFormat, mSheet!!)
         addColumn(C_MATERIAL, 1, LedgerDefine.MATERIAL, cellFormat, mSheet!!)
-        addColumn(C_RATE, 1, LedgerDefine.RATE, cellFormat, mSheet!!)
-        addColumn(C_QUANTITY, 1, LedgerDefine.QUANTITY, cellFormat, mSheet!!)
-        addColumn(C_AMOUNT, 1, LedgerDefine.AMOUNT, cellFormat, mSheet!!)
-        addColumn(C_SENDER_NAME, 1, LedgerDefine.SENDER_NAME, cellFormat, mSheet!!)
+        addColumn(C_GST_TAX, 1, LedgerDefine.GST_TAX_AMOUNT, cellFormat, mSheet!!)
+        addColumn(C_GST_TAX_PERCENTAGE, 1, LedgerDefine.GST_TAX_PERCENTAGE, cellFormat, mSheet!!)
+        addColumn(C_BILL_AMOUNT, 1, LedgerDefine.GST_BILL_AMOUNT, cellFormat, mSheet!!)
+        addColumn(C_SUPPLIER_NAME, 1, LedgerDefine.SENDER_NAME, cellFormat, mSheet!!)
         addColumn(C_RECEIVER_NAME, 1, LedgerDefine.RECEIVER_NAME, cellFormat, mSheet!!)
-        addColumn(C_MATERIAL_ID, 1, LedgerDefine.MATERIAL_ID, cellFormat, mSheet!!)
+        addColumn(C_GST_ID, 1, LedgerDefine.MATERIAL_ID, cellFormat, mSheet!!)
         addColumn(C_REMARKS, 1, LedgerDefine.REMARK, cellFormat, mSheet!!)
         addColumn(C_TIMESTAMP, 1, LedgerDefine.TIME_STAMP, cellFormat, mSheet!!)
-        addColumn(C_SENDER_ID, 1, LedgerDefine.SENDER_ID, cellFormat, mSheet!!)
+        addColumn(C_SUPPLIER_ID, 1, LedgerDefine.SENDER_ID, cellFormat, mSheet!!)
         addColumn(C_RECEIVER_ID, 1, LedgerDefine.RECEIVER_ID, cellFormat, mSheet!!)
         addColumn(C_LOGGED_ID, 1, LedgerDefine.LOGGED_IN_ID, cellFormat, mSheet!!)
         addColumn(C_PROJECT_ID, 1, LedgerDefine.PROJECT_ID, cellFormat, mSheet!!)

@@ -1,6 +1,8 @@
 package com.datamangement.devast007.bahikhata.ui.fragment
 
+import android.app.AlertDialog
 import android.app.Dialog
+import android.content.DialogInterface
 import android.os.Bundle
 import android.support.v4.app.DialogFragment
 import android.view.Gravity
@@ -13,7 +15,7 @@ import android.widget.SimpleAdapter
 import com.datamangement.devast007.bahikhata.R
 import com.datamangement.devast007.bahikhata.ui.AddMaterialActivity
 import com.datamangement.devast007.bahikhata.utils.LedgerDefine
-import com.datamangement.devast007.bahikhata.utils.SqlDBFile
+import com.datamangement.devast007.bahikhata.utils.UserDetails
 import kotlinx.android.synthetic.main.activity_add_transaction.*
 
 
@@ -138,10 +140,43 @@ class DialogFragmentToSelectUserOrProjectForMaterial : DialogFragment(), Adapter
                 return true
             }
         })
-       titleSearchView.onActionViewExpanded();
+        titleSearchView.onActionViewExpanded();
         //titleSearchView.setIconified(false);
         titleSearchView.requestFocus()
         return mBottomSheetDialog
+    }
+
+    private fun showChooseUserDialog(user: UserDetails, type: Int) {
+        AlertDialog.Builder(context)
+            .setTitle(user.userID)
+            .setMessage("Select Account !!")
+            .setCancelable(true)
+            .setPositiveButton(
+                R.string.personal,
+                DialogInterface.OnClickListener { dialog, which ->
+                    val PERSONAL_ACCOUNT = LedgerDefine.PREFIX_PERSONAL + user.userID
+                    var str = PERSONAL_ACCOUNT + "\n" + user.name
+                    if (type == LedgerDefine.SELECTION_TYPE_SENDER) {
+                        addMaterialActivity!!.tv_sender_id.text = str
+                    } else {
+                        addMaterialActivity!!.tv_receiver_id.text = str
+                    }
+                })
+
+            .setNegativeButton(R.string.master,
+                DialogInterface.OnClickListener { dialog, which ->
+                    val MASTERL_ACCOUNT = LedgerDefine.PREFIX_MASTER + user.userID
+                    var str = MASTERL_ACCOUNT + "\n" + user.name
+                    if (type == LedgerDefine.SELECTION_TYPE_SENDER) {
+                        addMaterialActivity!!.tv_sender_id.text = str
+                    } else {
+                        addMaterialActivity!!.tv_receiver_id.text = str
+                    }
+
+                })
+            .setIcon(android.R.drawable.ic_dialog_alert)
+            .show()
+
     }
 
     override fun onItemClick(adapterView: AdapterView<*>?, view: View?, index: Int, p3: Long) {
@@ -155,8 +190,13 @@ class DialogFragmentToSelectUserOrProjectForMaterial : DialogFragment(), Adapter
                 for (user in addMaterialActivity!!.mSenderList!!) {
                     if (id == user.userID) {
                         addMaterialActivity!!.mSelectedSender = user
-                        var str = user.userID + "\n" + user.name
-                        addMaterialActivity!!.tv_sender_id.setText(str)
+                        if (user.userAccounts!!.size > 1) {
+                            showChooseUserDialog(user, mType)
+                        } else {
+                            var str = user.userAccounts!![0] + "\n" + user.name
+                            addMaterialActivity!!.tv_sender_id.text = str
+                        }
+
                         break
                     }
                 }
@@ -167,9 +207,13 @@ class DialogFragmentToSelectUserOrProjectForMaterial : DialogFragment(), Adapter
                 for (user in addMaterialActivity!!.mReceiverList!!) {
                     if (id == user.userID) {
                         addMaterialActivity!!.mSelectedReceiver = user
-                        var str = user.userID + "\n" + user.name
-                        addMaterialActivity!!.tv_receiver_id.setText(str)
-                        //setPreferenceFromDB(id)
+                        if (user.userAccounts!!.size > 1) {
+                            showChooseUserDialog(user, mType)
+                        } else {
+                            var str = user.userAccounts!![0] + "\n" + user.name
+                            addMaterialActivity!!.tv_receiver_id.text = str
+                        }
+
                         break
 
                     }
@@ -195,7 +239,7 @@ class DialogFragmentToSelectUserOrProjectForMaterial : DialogFragment(), Adapter
                     if (accountNo == bankAccountDetail.accountNo) {
                         var str = bankAccountDetail.accountNo + "\n" + bankAccountDetail.payee
                         if (mType == LedgerDefine.SELECTION_TYPE_DEBIT_ACCOUNT) {
-                          //  addMaterialActivity!!.mSelectedDebitAccount = bankAccountDetail
+                            //  addMaterialActivity!!.mSelectedDebitAccount = bankAccountDetail
                             addMaterialActivity!!.tv_debit_account.setText(str)
                         } else {
                             //addMaterialActivity!!.mSelectedCreditAccount = bankAccountDetail

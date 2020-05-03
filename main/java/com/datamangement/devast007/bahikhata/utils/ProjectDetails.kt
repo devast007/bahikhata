@@ -9,6 +9,12 @@ class ProjectDetails {
             field = value
         }
 
+    var nickname: String = ""
+        get() = field
+        set(value) {
+            field = value
+        }
+
     var amount: Long = 0
         get() = field
         set(value) {
@@ -102,7 +108,7 @@ class ProjectDetails {
             field = value
         }
 
-    var timeStamp: Date? = null
+    var timeStamp: String? = null
         get() = field
         set(value) {
             field = value

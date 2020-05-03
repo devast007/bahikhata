@@ -2,7 +2,7 @@ package com.datamangement.devast007.bahikhata.utils
 
 import java.util.*
 
-class MaterialDetails {
+class GstDetails {
 
     var loggedInID: String = ""
         get() = field
@@ -10,7 +10,7 @@ class MaterialDetails {
             field = value
         }
 
-    var materialID: String = ""
+    var gstId: String = ""
         get() = field
         set(value) {
             field = value
@@ -22,7 +22,7 @@ class MaterialDetails {
             field = value
         }
 
-    var senderId: String = ""
+    var supplierID: String = ""
         get() = field
         set(value) {
             field = value
@@ -34,17 +34,17 @@ class MaterialDetails {
             field = value
         }
 
-    var amount: String = ""
+    var billAmount: String = ""
         get() = field
         set(value) {
             field = value
         }
-    var rate: String = ""
+    var gstTax: String = ""
         get() = field
         set(value) {
             field = value
         }
-    var quantity: String = ""
+    var gstTaxPercent: String = ""
         get() = field
         set(value) {
             field = value

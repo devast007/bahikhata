@@ -6,13 +6,11 @@ import android.graphics.Color
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.StyleSpan
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.BaseExpandableListAdapter
-import android.widget.Button
-import android.widget.LinearLayout
-import android.widget.TextView
+import android.widget.*
 import com.datamangement.devast007.bahikhata.R
 import com.datamangement.devast007.bahikhata.R.drawable.selected_group
 import com.datamangement.devast007.bahikhata.ui.TransactionViewActivity
@@ -21,10 +19,12 @@ import com.datamangement.devast007.bahikhata.utils.TransactionDetails
 
 class TransactionViewAdapter(
     transactionViewActivity: TransactionViewActivity,
-    transactionsList: ArrayList<TransactionDetails>
+    transactionsList: ArrayList<TransactionDetails>,
+    longClickedForAddition: Boolean
 ) : BaseExpandableListAdapter() {
     private val mTransactionViewActivity: TransactionViewActivity = transactionViewActivity
     val mTransactionsList = transactionsList
+    private val mLongClickedForAddition = longClickedForAddition
     var mInflater: LayoutInflater =
         mTransactionViewActivity.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
     val mIsAdmin: Boolean = LedgerUtils.signInProfile!!.isAdmin
@@ -70,7 +70,13 @@ class TransactionViewAdapter(
         return true
     }
 
-    override fun getChildView(pos: Int, p1: Int, p2: Boolean, convertView: View?, parent: ViewGroup?): View? {
+    override fun getChildView(
+        pos: Int,
+        p1: Int,
+        p2: Boolean,
+        convertView: View?,
+        parent: ViewGroup?
+    ): View? {
         var view: View? = convertView
         var childHolder: ChildHolder? = null
         if (view == null) {
@@ -85,15 +91,17 @@ class TransactionViewAdapter(
         val transactionDetails: TransactionDetails = mTransactionsList.get(pos)
         childHolder!!.tvSenderID.text = getSpannableString(
             transactionDetails.senderId,
-            mTransactionViewActivity.mUsersMap.get(transactionDetails.senderId)
+            mTransactionViewActivity.mUsersMap[getUserId(transactionDetails.senderId)]
         )
         childHolder!!.tvRecevierID.text = getSpannableString(
             transactionDetails.receiverId,
-            mTransactionViewActivity.mUsersMap.get(transactionDetails.receiverId)
+            mTransactionViewActivity.mUsersMap[getUserId(transactionDetails.receiverId)]
         )
-        childHolder!!.tvTransactionDate.text = LedgerUtils.getConvertDate(transactionDetails.transactionDate)
+        childHolder!!.tvTransactionDate.text =
+            LedgerUtils.getConvertDate(transactionDetails.transactionDate)
         childHolder!!.tvAmount.text = LedgerUtils.getRupeesFormatted(transactionDetails.amount)
-        childHolder!!.tvProjectID.text = transactionDetails.projectId
+        childHolder!!.tvProjectID.text =
+            mTransactionViewActivity.mProjectsMap[transactionDetails.projectId]
         childHolder!!.tvTransactionType.text = "" + transactionDetails.transactionType
         var strID = R.string.no
         if (transactionDetails.verified) {
@@ -116,7 +124,10 @@ class TransactionViewAdapter(
         if (mIsAdmin) {
             childHolder.editTransaction.visibility = View.VISIBLE
             childHolder.editTransaction.setOnClickListener(mTransactionViewActivity)
-            childHolder.editTransaction.setTag(R.string.tag_transaction_id, transactionDetails.transactionID)
+            childHolder.editTransaction.setTag(
+                R.string.tag_transaction_id,
+                transactionDetails.transactionID
+            )
         } else {
             childHolder.editTransaction.visibility = View.GONE
         }
@@ -142,8 +153,11 @@ class TransactionViewAdapter(
 
         childHolder.btnVerify.setTag(R.string.tag_transaction_id, transactionDetails.transactionID)
         childHolder.btnDel.setTag(R.string.tag_transaction_id, transactionDetails.transactionID)
-        childHolder.tvSenderID.setTag(R.string.tag_user_id, transactionDetails.senderId)
-        childHolder.tvRecevierID.setTag(R.string.tag_user_id, transactionDetails.receiverId)
+        childHolder.tvSenderID.setTag(R.string.tag_user_id, getUserId(transactionDetails.senderId))
+        childHolder.tvRecevierID.setTag(
+            R.string.tag_user_id,
+            getUserId(transactionDetails.receiverId)
+        )
         childHolder.tvLoggedInId.setTag(R.string.tag_user_id, transactionDetails.loggedInID)
         childHolder.tvProjectID.setTag(R.string.tag_project_id, transactionDetails.projectId)
         childHolder.tvDebitAccount.setTag(R.string.tag_account_id, transactionDetails.debitedTo)
@@ -161,6 +175,13 @@ class TransactionViewAdapter(
         return view
     }
 
+    private fun getUserId(userAccount: String): String? {
+        var userId: String = ""
+        userId = userAccount.substring(2)
+        return userId
+
+    }
+
     override fun areAllItemsEnabled(): Boolean {
         return true
     }
@@ -173,7 +194,12 @@ class TransactionViewAdapter(
         return groupID
     }
 
-    override fun getGroupView(pos: Int, isExpanded: Boolean, convertView: View?, parent: ViewGroup?): View? {
+    override fun getGroupView(
+        pos: Int,
+        isExpanded: Boolean,
+        convertView: View?,
+        parent: ViewGroup?
+    ): View? {
         var view: View? = convertView
         var groupHolder: GroupHolder? = null
         if (view == null) {
@@ -184,27 +210,95 @@ class TransactionViewAdapter(
             groupHolder = view.tag as GroupHolder?
         }
 
+
         val transactionDetails: TransactionDetails = mTransactionsList[pos]
-        groupHolder!!.tvSenderID.text = getSpannableString(
-            transactionDetails.senderId,
-            mTransactionViewActivity.mUsersMap.get(transactionDetails.senderId)
-        )
+
         groupHolder!!.tvRecevierID.text = getSpannableString(
-            transactionDetails.receiverId,
-            mTransactionViewActivity.mUsersMap.get(transactionDetails.receiverId)
+            transactionDetails.receiverId.substring(0, 1),
+            mTransactionViewActivity.mUsersMap.get(getUserId(transactionDetails.receiverId))
         )
-        groupHolder!!.tvTransactionDate.text = LedgerUtils.getConvertDate(transactionDetails.transactionDate)
-        groupHolder!!.tvAmount.text = LedgerUtils.getRupeesFormatted(transactionDetails.amount)
+        groupHolder!!.tvTransactionDate.text =
+            LedgerUtils.getConvertDate(transactionDetails.transactionDate)
+
+
+        when (mTransactionViewActivity.mSwitchProjectOrSender) {
+            0 -> {
+
+                groupHolder!!.tvSenderID.text = getSpannableString(
+                    transactionDetails.senderId.substring(0, 1),
+                    mTransactionViewActivity.mUsersMap[getUserId(transactionDetails.senderId)]
+                )
+                groupHolder!!.tvSenderID.setTextColor(Color.WHITE)
+                groupHolder!!.tvSenderID.setBackgroundColor(Color.RED)
+
+                groupHolder!!.tvRecevierID.text = getSpannableString(
+                    transactionDetails.receiverId.substring(0, 1),
+                    mTransactionViewActivity.mUsersMap[getUserId(transactionDetails.receiverId)]
+                )
+                groupHolder!!.tvRecevierID.setTextColor(Color.WHITE)
+                groupHolder!!.tvRecevierID.setBackgroundResource(R.color.dark_green)
+
+            }
+            1 -> {
+                groupHolder!!.tvSenderID.text =transactionDetails.remarks
+                groupHolder!!.tvSenderID.setTextColor(Color.BLACK)
+                groupHolder!!.tvSenderID.setBackgroundColor(Color.WHITE)
+
+                groupHolder!!.tvRecevierID.text = getSpannableString(
+                    transactionDetails.receiverId.substring(0, 1),
+                    mTransactionViewActivity.mUsersMap[getUserId(transactionDetails.receiverId)]
+                )
+                groupHolder!!.tvRecevierID.setTextColor(Color.WHITE)
+                groupHolder!!.tvRecevierID.setBackgroundResource(R.color.dark_green)
+
+            }
+            else -> {
+                groupHolder!!.tvSenderID.text = getSpannableString(
+                    transactionDetails.senderId.substring(0, 1),
+                    mTransactionViewActivity.mUsersMap[getUserId(transactionDetails.senderId)]
+                )
+                groupHolder!!.tvSenderID.setTextColor(Color.WHITE)
+                groupHolder!!.tvSenderID.setBackgroundColor(Color.RED)
+
+                groupHolder!!.tvRecevierID.text =
+                    mTransactionViewActivity.mProjectsMap[transactionDetails.projectId]
+                groupHolder!!.tvRecevierID.setTextColor(Color.BLACK)
+                groupHolder!!.tvRecevierID.setBackgroundColor(Color.WHITE)
+
+
+            }
+        }
+
+
 
         if (transactionDetails.verified) {
             if (isExpanded) {
                 view!!.setBackgroundResource(selected_group)
             } else {
-                view!!.setBackgroundColor(Color.parseColor("#73cce7"))
+                view!!.setBackgroundColor(Color.parseColor("#FF85C5F8"))
             }
         } else {
             view!!.setBackgroundColor(Color.RED)
         }
+        if (mTransactionViewActivity.mLongClickedForAddition) {
+            groupHolder!!.cbAddition.visibility = View.VISIBLE
+            groupHolder!!.tvAmount.visibility = View.GONE
+            groupHolder!!.cbAddition.setTag(R.string.tag_amount, transactionDetails.amount)
+            groupHolder!!.cbAddition.setTag(
+                R.string.tag_transaction_id,
+                transactionDetails.transactionID
+            )
+            groupHolder!!.cbAddition.text = "["+ (pos+1) +"] " +
+                    LedgerUtils.getRupeesFormatted(transactionDetails.amount)
+            groupHolder!!.cbAddition.isChecked = transactionDetails.isChecked
+        } else {
+            groupHolder!!.cbAddition.visibility = View.GONE
+            groupHolder!!.tvAmount.visibility = View.VISIBLE
+            groupHolder!!.tvAmount.text = LedgerUtils.getRupeesFormatted(transactionDetails.amount)
+        }
+
+
+        groupHolder!!.cbAddition.setOnClickListener(mTransactionViewActivity)
         return view
     }
 
@@ -220,6 +314,7 @@ class TransactionViewAdapter(
         val tvRecevierID = view.findViewById<TextView>(R.id.tv_receiver_id)
         val tvTransactionDate = view.findViewById<TextView>(R.id.tv_transaction_date)
         var tvAmount = view.findViewById<TextView>(R.id.tv_transaction_amount)
+        var cbAddition = view.findViewById<CheckBox>(R.id.cb_for_addition)
     }
 
     class ChildHolder(view: View) {
@@ -251,11 +346,16 @@ class TransactionViewAdapter(
 
         val bold = StyleSpan(android.graphics.Typeface.BOLD)
         val normal = StyleSpan(android.graphics.Typeface.NORMAL)
+        val tempKey = "[$key]"
+        val content = SpannableString("$tempKey $value")
 
-        val content = SpannableString("$key [$value]")
-
-        content.setSpan(bold, 0, key.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-        content.setSpan(normal, key.length + 1, content.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+        content.setSpan(bold, 0, tempKey.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+        content.setSpan(
+            normal,
+            tempKey.length + 1,
+            content.length,
+            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
         return content
     }
 

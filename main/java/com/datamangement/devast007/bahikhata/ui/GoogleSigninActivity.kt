@@ -16,7 +16,6 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.ArrayAdapter
 import android.widget.Toast
 import com.datamangement.devast007.bahikhata.R
 import com.datamangement.devast007.bahikhata.firestore.FirestoreDataBase
@@ -25,6 +24,7 @@ import com.datamangement.devast007.bahikhata.utils.LedgerSharePrefManger
 import com.datamangement.devast007.bahikhata.utils.LedgerUtils
 import com.datamangement.devast007.bahikhata.utils.SignInProfile
 import com.google.android.gms.auth.api.Auth
+import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.ConnectionResult
@@ -33,13 +33,15 @@ import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QueryDocumentSnapshot
 import com.google.firebase.firestore.QuerySnapshot
 import kotlinx.android.synthetic.main.activity_google_signin.*
 import java.util.*
 
 
-class GoogleSigninActivity : AppCompatActivity(), View.OnClickListener, GoogleApiClient.OnConnectionFailedListener {
+class GoogleSigninActivity : AppCompatActivity(), View.OnClickListener,
+    GoogleApiClient.OnConnectionFailedListener {
 
     private val TAG = "GoogleSigninActivity"
     private val REQUEST_CODE_SIGN_IN = 1234
@@ -67,6 +69,7 @@ class GoogleSigninActivity : AppCompatActivity(), View.OnClickListener, GoogleAp
         tv_admin_all_transactions.setOnClickListener(this)
         tv_admin_all_accounts.setOnClickListener(this)
         tv_admin_all_material.setOnClickListener(this)
+        tv_admin_all_gst.setOnClickListener(this)
 
         tv_users_normal.setOnClickListener(this)
         tv_users_supervisor.setOnClickListener(this)
@@ -95,7 +98,7 @@ class GoogleSigninActivity : AppCompatActivity(), View.OnClickListener, GoogleAp
         // Check if user is signed in (non-null) and update UI accordingly.
         when (mCurrentType) {
             TYPE_NOT_SIGNED -> {
-                et_company_id.setText(LedgerSharePrefManger(mContext).getCompanyName())
+                et_company_id.setText(LedgerSharePrefManger(mContext).getCompanyID())
                 updateUI(TYPE_NOT_SIGNED)
             }
             TYPE_SIGNED_DATA_FETCHING -> {
@@ -109,7 +112,7 @@ class GoogleSigninActivity : AppCompatActivity(), View.OnClickListener, GoogleAp
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        getMenuInflater().inflate(R.menu.menu_signout_button_view, menu)
+        menuInflater.inflate(R.menu.menu_signout_button_view, menu)
         return true
     }
 
@@ -131,26 +134,35 @@ class GoogleSigninActivity : AppCompatActivity(), View.OnClickListener, GoogleAp
             R.id.tv_admin_all_transactions -> launchTransactionView(LedgerDefine.DESIGNATION_ADMIN)
             R.id.tv_admin_all_accounts -> launchAccountView()
             R.id.tv_admin_all_material -> launchMaterialView()
-
+            R.id.tv_admin_all_gst -> launchGstView()
             R.id.tv_users_supervisor -> launchTransactionView(LedgerDefine.DESIGNATION_SUPERVISOR)
             R.id.tv_users_normal -> launchTransactionView(LedgerDefine.DESIGNATION_NORMAL)
 
         }
     }
 
+    private fun launchGstView() {
+        val intent = Intent(mContext, GstViewActivity::class.java)
+        startActivity(intent)
+    }
+
     private fun launchMaterialView() {
-        val intent = Intent(mContext, AddGSTActivity::class.java)
+        val intent = Intent(mContext, MaterialViewActivity::class.java)
         startActivity(intent)
     }
 
     private fun launchAccountView() {
-        val intent = Intent(mContext, BankAccountViewActivity::class.java)
-        startActivity(intent)
+        if (!mSignInProfile!!.isHasLimitedAccess) {
+            val intent = Intent(mContext, BankAccountViewActivity::class.java)
+            startActivity(intent)
+        }
     }
 
     private fun launchProjectView() {
-        val intent = Intent(mContext, ProjectsViewActivity::class.java)
-        startActivity(intent)
+        if (!mSignInProfile!!.isHasLimitedAccess) {
+            val intent = Intent(mContext, ProjectsViewActivity::class.java)
+            startActivity(intent)
+        }
     }
 
     private fun launchUserView() {
@@ -160,18 +172,34 @@ class GoogleSigninActivity : AppCompatActivity(), View.OnClickListener, GoogleAp
 
     private fun launchTransactionView(type: Long) {
         val intent = Intent(mContext, TransactionViewActivity::class.java)
-        if (type == LedgerDefine.DESIGNATION_ADMIN) {
-            intent.putExtra(LedgerDefine.TRANSACTION_VIEW_TYPE, LedgerDefine.TRANSACTION_VIEW_TYPE_ALL)
-            // skip everything
-        } else if (type == LedgerDefine.DESIGNATION_SUPERVISOR) {
-            intent.putExtra(LedgerDefine.TRANSACTION_VIEW_TYPE, LedgerDefine.TRANSACTION_VIEW_TYPE_USER)
-            intent.putExtra(LedgerDefine.ID, mSignInProfile!!.supervisorID)
-            intent.putExtra(LedgerDefine.DESIGNATION, LedgerDefine.DESIGNATION_SUPERVISOR)
-        } else if (type == LedgerDefine.DESIGNATION_NORMAL) {
-            intent.putExtra(LedgerDefine.TRANSACTION_VIEW_TYPE, LedgerDefine.TRANSACTION_VIEW_TYPE_USER)
-            intent.putExtra(LedgerDefine.ID, mSignInProfile!!.normalId)
-            intent.putExtra(LedgerDefine.DESIGNATION, LedgerDefine.DESIGNATION_NORMAL)
+        var viewType = LedgerDefine.TRANSACTION_VIEW_TYPE_ALL
+        if (mSignInProfile!!.isHasLimitedAccess) {
+            viewType = LedgerDefine.TRANSACTION_VIEW_TYPE_USER
+
+            if (mSignInProfile!!.userAccounts!!.size > 1) {
+                intent.putExtra(
+                    LedgerDefine.ID,
+                    LedgerDefine.PREFIX_MASTER + mSignInProfile!!.userID
+                )
+            } else {
+                intent.putExtra(
+                    LedgerDefine.ID,
+                    LedgerDefine.PREFIX_PERSONAL + mSignInProfile!!.userID
+                )
+            }
         }
+        intent.putExtra(LedgerDefine.TRANSACTION_VIEW_TYPE, viewType)
+        // skip everything
+        /*{ else if (type == LedgerDefine.DESIGNATION_SUPERVISOR) {
+        intent.putExtra(LedgerDefine.TRANSACTION_VIEW_TYPE, LedgerDefine.TRANSACTION_VIEW_TYPE_USER)
+        intent.putExtra(LedgerDefine.ID, mSignInProfile!!.userID)
+        intent.putExtra(LedgerDefine.DESIGNATION, LedgerDefine.DESIGNATION_SUPERVISOR)
+    } else if (type == LedgerDefine.DESIGNATION_NORMAL)
+    {
+        intent.putExtra(LedgerDefine.TRANSACTION_VIEW_TYPE, LedgerDefine.TRANSACTION_VIEW_TYPE_USER)
+        intent.putExtra(LedgerDefine.ID, mSignInProfile!!.userID)
+        intent.putExtra(LedgerDefine.DESIGNATION, LedgerDefine.DESIGNATION_NORMAL)
+    }*/
         startActivity(intent)
     }
 
@@ -179,6 +207,7 @@ class GoogleSigninActivity : AppCompatActivity(), View.OnClickListener, GoogleAp
         super.onActivityResult(requestCode, resultCode, data)
 
         // Result returned from launching the Intent from GoogleSignInApi.getSignInIntent();
+
         if (requestCode == REQUEST_CODE_SIGN_IN) {
             val result = Auth.GoogleSignInApi.getSignInResultFromIntent(data)
             if (result.isSuccess) {
@@ -199,20 +228,17 @@ class GoogleSigninActivity : AppCompatActivity(), View.OnClickListener, GoogleAp
     private var mCurrentUserInfo: FirebaseUser? = null
 
     private fun firebaseAuthWithGoogle(acct: GoogleSignInAccount) {
-        Log.e(TAG, "firebaseAuthWithGoogle():" + acct.id!!)
 
         val credential = GoogleAuthProvider.getCredential(acct.idToken, null)
         mAuth!!.signInWithCredential(credential)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
                     // Sign in success
-                    Log.e(TAG, "signInWithCredential: Success!")
                     mCurrentUserInfo = mAuth!!.currentUser
                     updateUI(TYPE_SIGNED_DATA_FETCHING)
                     mHandler.sendEmptyMessage(MSG_USER_PROFILE)
                 } else {
                     // Sign in fails
-                    Log.w(TAG, "signInWithCredential: Failed!", task.exception)
                     Toast.makeText(
                         applicationContext, "Authentication failed!",
                         Toast.LENGTH_SHORT
@@ -223,14 +249,14 @@ class GoogleSigninActivity : AppCompatActivity(), View.OnClickListener, GoogleAp
     }
 
     override fun onConnectionFailed(connectionResult: ConnectionResult) {
-        Log.e(TAG, "onConnectionFailed():" + connectionResult);
-        Toast.makeText(applicationContext, "Google Play Services error.", Toast.LENGTH_SHORT).show();
+        Toast.makeText(applicationContext, "Google Play Services error.", Toast.LENGTH_SHORT)
+            .show();
     }
 
     private fun signIn() {
         var companyID = et_company_id.text.toString()
         if (TextUtils.isEmpty(companyID)) return
-        LedgerSharePrefManger(this!!.mContext!!).setCompanyName(companyID)
+        LedgerSharePrefManger(this!!.mContext!!).setCompanyID(companyID)
         val intent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient)
         startActivityForResult(intent, REQUEST_CODE_SIGN_IN)
     }
@@ -240,7 +266,8 @@ class GoogleSigninActivity : AppCompatActivity(), View.OnClickListener, GoogleAp
         mAuth!!.signOut()
 
         // sign out Google
-        Auth.GoogleSignInApi.signOut(mGoogleApiClient).setResultCallback { updateUI(TYPE_NOT_SIGNED) }
+        Auth.GoogleSignInApi.signOut(mGoogleApiClient)
+            .setResultCallback { updateUI(TYPE_NOT_SIGNED) }
     }
 
 
@@ -277,40 +304,41 @@ class GoogleSigninActivity : AppCompatActivity(), View.OnClickListener, GoogleAp
                 tv_company_info.text = LedgerSharePrefManger(mContext).getCompanyName()
                 layout_01_sign_in.visibility = View.GONE
                 layout_02_loading.visibility = View.GONE
-                if (mSignInProfile!!.isAdmin) {
-                    layout_03_admin.visibility = View.VISIBLE
-                    layout_03_normal.visibility = View.GONE
-                    tv_user_name.setText(R.string.admin)
-                } else {
-                    layout_03_admin.visibility = View.GONE
-                    layout_03_normal.visibility = View.VISIBLE
-                    Log.d(TAG, "mSignInProfile!!.isSupervisor =  " + mSignInProfile!!.isSupervisor)
-                    if (mSignInProfile!!.isSupervisor) {
-                        Log.d(TAG, "inside mSignInProfile!!.supervisorID " + mSignInProfile!!.supervisorID)
-                        layout_supervisor_account.visibility = View.VISIBLE
-                        tv_users_supervisor.text =
-                                " Owner: " + mSignInProfile!!.supervisorID
-                        tv_users_supervisor_amount.text =
-                                LedgerUtils.getRupeesFormatted(mSignInProfile!!.supervisorAmount)
+                // if (mSignInProfile!!.isAdmin) {
+                layout_03_admin.visibility = View.VISIBLE
+                layout_03_normal.visibility = View.GONE
+                tv_user_name.text = mSignInProfile!!.name
+                tv_admin_title.text = mSignInProfile!!.name
+                /* } else {
+                     layout_03_admin.visibility = View.GONE
+                     layout_03_normal.visibility = View.VISIBLE
+                     Log.d(TAG, "mSignInProfile!!.isSupervisor =  " + mSignInProfile!!.isSupervisor)
+                     if (mSignInProfile!!.isSupervisor) {
+                         Log.d(TAG, "inside mSignInProfile!!.userID " + mSignInProfile!!.userID)
+                         layout_supervisor_account.visibility = View.VISIBLE
+                         tv_users_supervisor.text =
+                             " Owner: " + mSignInProfile!!.userID
+                         tv_users_supervisor_amount.text =
+                             LedgerUtils.getRupeesFormatted(mSignInProfile!!.supervisorAmount)
 
 
-                        var adapter: ArrayAdapter<String> = ArrayAdapter<String>(
-                            this,
-                            android.R.layout.simple_list_item_1,
-                            mSignInProfile!!.accesibleProjects
-                        );
-                        listview.adapter = adapter
-                    } else {
-                        layout_supervisor_account.visibility = View.GONE
-                    }
-                    Log.d(TAG, "mSignInProfile!!.isSupervisor =  " + mSignInProfile!!.isNormal)
-                    if (mSignInProfile!!.isNormal) {
-                        tv_users_normal.text =
-                                " Normal: " + mSignInProfile!!.normalId
-                        tv_users_normal_amount.text = LedgerUtils.getRupeesFormatted(mSignInProfile!!.normalAmount)
-                    }
-                    tv_user_name.text = mSignInProfile!!.name
-                }
+                         var adapter: ArrayAdapter<String> = ArrayAdapter<String>(
+                             this,
+                             android.R.layout.simple_list_item_1,
+                             mSignInProfile!!.accesibleProjects
+                         );
+                         listview.adapter = adapter
+                     } else {
+                         layout_supervisor_account.visibility = View.GONE
+                     }
+                     Log.d(TAG, "mSignInProfile!!.isSupervisor =  " + mSignInProfile!!.isNormal)
+                     if (mSignInProfile!!.isNormal) {
+                         tv_users_normal.text =
+                             " Normal: " + mSignInProfile!!.userID
+                         tv_users_normal_amount.text = LedgerUtils.getRupeesFormatted(mSignInProfile!!.normalAmount)
+                     }
+                     tv_user_name.text = mSignInProfile!!.name
+                 }*/
 
             }
         }
@@ -319,7 +347,12 @@ class GoogleSigninActivity : AppCompatActivity(), View.OnClickListener, GoogleAp
     fun getUnderLineText(str: String): SpannableString {
         val content = SpannableString(str)
         content.setSpan(UnderlineSpan(), 0, str.length, 0)
-        content.setSpan(ForegroundColorSpan(Color.BLUE), 0, str.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        content.setSpan(
+            ForegroundColorSpan(Color.BLUE),
+            0,
+            str.length,
+            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+        );
         return content
     }
 
@@ -338,28 +371,46 @@ class GoogleSigninActivity : AppCompatActivity(), View.OnClickListener, GoogleAp
 
     private fun getProfileInfo(): Boolean {
         val db = FirestoreDataBase().db
-        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyName()
-        Log.d(TAG, "companyID => " + companyID + " , mCurrentUserInfo!!.email = " + mCurrentUserInfo!!.email)
-        db.collection(LedgerDefine.COMPANIES_SLASH + companyID + "/users")
+        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyID()
+        db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_USERS)
             .whereEqualTo("email", mCurrentUserInfo!!.email)
             .get()
             .addOnCompleteListener(OnCompleteListener<QuerySnapshot> { task ->
                 if (task.isSuccessful) {
                     mSignInProfile = null
                     for (document in task.result!!) {
-                        Log.d(TAG, document.id + " => " + document.data)
-                        Log.d(TAG, " document.get(\"name\")+ => " + document.get("name"))
-                        setProfileInfo(document);
+                        setProfileInfo(document)
                     }
+                    getCompanyProfile(db, companyID)
                     LedgerUtils.signInProfile = mSignInProfile
-                    updateUI(TYPE_SIGNED)
+                    Handler().postDelayed(Runnable { updateUI(TYPE_SIGNED) }, 500)
                 } else {
-                    Log.d(TAG, "Error getting documents: ", task.exception)
                     Toast.makeText(mContext, R.string.error_01, Toast.LENGTH_LONG)
                 }
             })
         return true;
     }
+
+    private fun getCompanyProfile(db: FirebaseFirestore, companyID: String) {
+        db.collection("companies")
+            .whereEqualTo("companyID", companyID)
+            .get()
+            .addOnCompleteListener(OnCompleteListener<QuerySnapshot> { task ->
+                var companyName = ""
+                if (task.isSuccessful) {
+                    for (document in task.result!!) {
+                        companyName = document.get("Name") as String
+
+                        break
+                    }
+                } else {
+                    Log.d(TAG, "Error getting documents: ", task.exception)
+                    Toast.makeText(mContext, R.string.error_01, Toast.LENGTH_LONG)
+                }
+                LedgerSharePrefManger(mContext).setCompanyName(companyName)
+            })
+    }
+
 
     private fun setProfileInfo(document: QueryDocumentSnapshot?) {
         if (document != null) {
@@ -368,22 +419,7 @@ class GoogleSigninActivity : AppCompatActivity(), View.OnClickListener, GoogleAp
             }
 
             var userID = document.get(LedgerDefine.USER_ID)
-            var amount = document.get(LedgerDefine.AMOUNT)
             var designation = document.get(LedgerDefine.DESIGNATION)
-            Log.d(TAG, " designation = " + designation)
-            if (designation != null) {
-                designation = designation as Long
-                if (designation == LedgerDefine.DESIGNATION_SUPERVISOR) {
-                    Log.d(TAG, " designation DESIGNATION_SUPERVISOR userID = " + userID)
-                    mSignInProfile!!.isSupervisor = true
-                    if (amount != null) mSignInProfile!!.supervisorAmount = amount as Long
-                    if (userID != null) mSignInProfile!!.supervisorID = userID as String
-                } else if (designation == LedgerDefine.DESIGNATION_NORMAL) {
-                    mSignInProfile!!.isNormal = true
-                    if (amount != null) mSignInProfile!!.normalAmount = amount as Long
-                    if (userID != null) mSignInProfile!!.normalId = userID as String
-                }
-            }
 
             var projects = document.get(LedgerDefine.ACCESSIBLE_PROJECTS)
 
@@ -391,14 +427,30 @@ class GoogleSigninActivity : AppCompatActivity(), View.OnClickListener, GoogleAp
                 mSignInProfile!!.accesibleProjects = projects as ArrayList<String>
             }
 
+            var accounts = document.get(LedgerDefine.ACCOUNTS)
+
+            if (accounts != null) {
+                mSignInProfile!!.userAccounts = accounts as ArrayList<String>
+            }
+
             var isAdmin = document.get(LedgerDefine.IS_ADMIN)
             if (isAdmin != null) {
                 mSignInProfile!!.isAdmin = isAdmin as Boolean
-                if (userID != null) mSignInProfile!!.adminID = userID as String
+            }
+
+            var isLimitedAccess = document.get(LedgerDefine.IS_HAS_LIMITED_ACCESS)
+            if (isLimitedAccess != null) {
+                mSignInProfile!!.isHasLimitedAccess = isLimitedAccess as Boolean
             }
 
             var name = document.get(LedgerDefine.NAME)
             if (name != null) mSignInProfile!!.name = name as String
+            try {
+                userID = (userID as Long).toString()
+            } catch (e: ClassCastException) {
+                userID = userID as String
+            }
+            if (userID != null) mSignInProfile!!.userID = userID.toString()
 
         }
     }

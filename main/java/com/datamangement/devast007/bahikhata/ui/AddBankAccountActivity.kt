@@ -1,5 +1,6 @@
 package com.datamangement.devast007.bahikhata.ui
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.support.design.widget.Snackbar
@@ -19,6 +20,7 @@ import com.google.android.gms.tasks.OnSuccessListener
 import com.google.firebase.firestore.*
 import kotlinx.android.synthetic.main.activity_add_bank_account.*
 
+
 class AddBankAccountActivity : AppCompatActivity(), View.OnClickListener {
 
 
@@ -35,7 +37,7 @@ class AddBankAccountActivity : AppCompatActivity(), View.OnClickListener {
         setSupportActionBar(toolbar)
         btn_save.setOnClickListener(this)
 
-        mCompanyID = LedgerSharePrefManger(mContext).getCompanyName()
+        mCompanyID = LedgerSharePrefManger(mContext).getCompanyID()
 
         mAccountAddType = intent.getIntExtra(
             LedgerDefine.BANK_ACCOUNT_ADD_TYPE, -1
@@ -49,6 +51,13 @@ class AddBankAccountActivity : AppCompatActivity(), View.OnClickListener {
         }
     }
 
+    override fun onBackPressed() {
+        val intent = Intent(this, GoogleSigninActivity::class.java)
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+        startActivity(intent)
+        finish()
+    }
+
     private fun getAccountDetails() {
         val db = FirestoreDataBase().db
         db.collection(LedgerDefine.COMPANIES_SLASH + mCompanyID + LedgerDefine.SLASH_BANK_ACCOUNTS)
@@ -58,7 +67,6 @@ class AddBankAccountActivity : AppCompatActivity(), View.OnClickListener {
                 if (task.isSuccessful) {
                     for (document in task.result!!) {
                         Log.d(TAG, document.id + " => " + document.data)
-                        Log.d(TAG, " document.get(\"name\")+ => " + document.get("name"))
                         setAccountInfo(document)
                         break
                     }
@@ -96,18 +104,10 @@ class AddBankAccountActivity : AppCompatActivity(), View.OnClickListener {
             .orderBy(LedgerDefine.BANK_ACCOUNT_ID, Query.Direction.DESCENDING).limit(1)
         docRef.get()
             .addOnSuccessListener(OnSuccessListener<QuerySnapshot> {
-                Log.d(
-                    TAG,
-                    "DataFetched data =  " + it
-                )
                 var tempId: Long = 99
                 if (it.documents.count() > 0) {
                     tempId = it.documents.get(0).get(LedgerDefine.BANK_ACCOUNT_ID).toString().toLong()
                 }
-                Log.d(
-                    TAG,
-                    "DataFetched tempUserId =  " + tempId
-                )
 
                 if (tempId!! >= BASE_ACCOUNT_ID) {
                     mAccountID = "" + (tempId + 1)
@@ -122,7 +122,6 @@ class AddBankAccountActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     private fun saveAccounts() {
-        Log.d(TAG, "saveAccounts ")
         val accountNumber = et_bank_account_number.text.toString()
         var payeeName = et_bank_account_payee_name.text.toString()
         val ifscCode = et_bank_account_ifsc_code.text.toString()
@@ -150,7 +149,6 @@ class AddBankAccountActivity : AppCompatActivity(), View.OnClickListener {
         btn_save.isEnabled = false
         var accounts = mDB.collection(LedgerDefine.COMPANIES_SLASH + mCompanyID + LedgerDefine.SLASH_BANK_ACCOUNTS)
         var docRefNor = accounts.document(mAccountID!!)
-        Log.d(TAG, "docRef " + docRefNor)
         // [START set_document]
         val account = HashMap<String, Any>()
         account[LedgerDefine.BANK_ACCOUNT_ID] = mAccountID!!
@@ -163,13 +161,11 @@ class AddBankAccountActivity : AppCompatActivity(), View.OnClickListener {
 
         if (mAccountAddType == LedgerDefine.BANK_ACCOUNT_MODIFY) {
             docRefNor.update(account).addOnSuccessListener(OnSuccessListener {
-                Log.d(TAG, "DocumentSnapshot successfully updated!")
                 tv_bank_account_id.append(" Updated Successfully !!");
             }).addOnFailureListener(OnFailureListener { e -> Log.w(TAG, "Error writing document", e) })
         } else {
             docRefNor.set(account)
                 .addOnSuccessListener(OnSuccessListener<Void> {
-                    Log.d(TAG, "DocumentSnapshot successfully written!")
                     tv_bank_account_id.append(" Done !!");
                     showSnackBar()
                 })

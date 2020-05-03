@@ -3,6 +3,7 @@ package com.datamangement.devast007.bahikhata.ui
 import android.app.Activity
 import android.content.ContentValues
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.support.design.widget.Snackbar
@@ -16,6 +17,7 @@ import android.widget.TextView
 import android.widget.Toast
 import com.datamangement.devast007.bahikhata.R
 import com.datamangement.devast007.bahikhata.firestore.FirestoreDataBase
+import com.datamangement.devast007.bahikhata.ui.fragment.DialogFragmentForAmountSelection
 import com.datamangement.devast007.bahikhata.ui.fragment.DialogFragmentToSelectUserOrProject
 import com.datamangement.devast007.bahikhata.utils.*
 import com.google.android.gms.tasks.OnCompleteListener
@@ -26,14 +28,18 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
 import kotlinx.android.synthetic.main.activity_add_transaction.*
+import java.lang.ClassCastException
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 
 class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
 
 
+    private val SENDER_ACCOUNT: Int = 1
+    private val RECEIVER_ACCOUNT: Int = 2
     private val TAG = "AddTransactionActivity"
     private var mContext: Context? = null
     var mSignInProfile: SignInProfile? = null
@@ -60,23 +66,28 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
         btn_save.setOnClickListener(this)
         img_btn_clear_debit_account.setOnClickListener(this)
         img_btn_clear_credit_account.setOnClickListener(this)
+        btn_suggestion.setOnClickListener(this)
 
 
 
         mSignInProfile = LedgerUtils.signInProfile
         getUsersList()
+        getProjectList()
+        getAccountList()
         if (mSignInProfile!!.isAdmin) {
-            getProjectList()
-            getAccountList()
-            tv_debit_account.visibility = View.VISIBLE
-            tv_credit_account.visibility = View.VISIBLE
-            rg_transaction_mode.visibility = View.VISIBLE
-            tv_sender_id.isEnabled = true
+            /* tv_debit_account.visibility = View.VISIBLE
+             tv_credit_account.visibility = View.VISIBLE
+             rg_transaction_mode.visibility = View.VISIBLE*/
+            et_day.isEnabled = true
+            et_month.isEnabled = true
+            et_year.isEnabled = true
         } else {
-            tv_debit_account.visibility = View.GONE
+            /*tv_debit_account.visibility = View.GONE
             tv_credit_account.visibility = View.GONE
-            rg_transaction_mode.visibility = View.GONE
-            tv_sender_id.isEnabled = false
+            rg_transaction_mode.visibility = View.GONE*/
+            et_day.isEnabled = false
+            et_month.isEnabled = false
+            et_year.isEnabled = false
         }
         mEditType = intent.getIntExtra(LedgerDefine.TRANSACTION_EDIT_TYPE, -1)
         if (mEditType == LedgerDefine.TRANSACTION_EDIT_TYPE_MODIFY) {
@@ -84,6 +95,10 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
         } else {
             setDefaultDate()
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
     }
 
     private var mTransactionIdToUpdate: String? = null
@@ -162,7 +177,7 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
 
         var db = FirestoreDataBase().db
 
-        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyName()
+        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyID()
 
         db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_BANK_ACCOUNTS)
             .get()
@@ -183,6 +198,9 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
             var project: ProjectDetails = ProjectDetails()
             project.projectID = document.get(LedgerDefine.PROJECT_ID) as String
             project.name = document.get(LedgerDefine.NAME) as String
+            var amount = document.get(LedgerDefine.AMOUNT)
+            if (amount != null)
+                project.amount = amount as Long
             mProjectList!!.add(project)
         }
     }
@@ -194,6 +212,11 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
             account.id = document.get(LedgerDefine.BANK_ACCOUNT_ID) as String
             account.accountNo = document.get(LedgerDefine.BANK_ACCOUNT_NUMBER) as String
             account.payee = document.get(LedgerDefine.PAYEE_NAME) as String
+
+            var amount = document.get(LedgerDefine.AMOUNT)
+            if (amount != null)
+                account.amount = amount as Long
+
             mBankAccountList!!.add(account)
         }
     }
@@ -206,6 +229,7 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     override fun onClick(view: View?) {
+        hideKeyboard()
         when (view!!.id) {
             R.id.tv_project_id -> openDialog(LedgerDefine.SELECTION_TYPE_PROJECT)
             R.id.tv_sender_id -> openDialog(LedgerDefine.SELECTION_TYPE_SENDER)
@@ -215,12 +239,21 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
             R.id.btn_save -> saveBtnClicked()
             R.id.img_btn_clear_debit_account -> clearDebitAccount()
             R.id.img_btn_clear_credit_account -> clearCreditAccount()
+            R.id.btn_suggestion -> openDialogForAmount()
         }
+    }
+
+    private fun openDialogForAmount() {
+        var fm = supportFragmentManager
+        var dFragment = DialogFragmentForAmountSelection()
+        // Show DialogFragment
+        dFragment.show(fm, " Amount select Dialog Fragment")
     }
 
     private fun clearCreditAccount() {
         mSelectedCreditAccount = null
         tv_credit_account.setText(null)
+        rb_other.isChecked = true
     }
 
     private fun clearDebitAccount() {
@@ -238,12 +271,14 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
             return
         }
 
-        if (mSelectedSender == null) {
+        val senderID = LedgerUtils.getUserAccount(tv_sender_id.text.toString())
+        val receiverID = LedgerUtils.getUserAccount(tv_receiver_id.text.toString())
+        if (isEmpty(senderID)) {
             toast(R.string.sender_name_is_empty)
             return
         }
 
-        if (mSelectedReceiver == null) {
+        if (isEmpty(receiverID)) {
             toast(R.string.receiver_name_is_empty)
             return
         }
@@ -254,30 +289,26 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
         }
 
 
-        if (mSelectedReceiver!!.userID == mSelectedSender!!.userID) {
+        if (senderID == receiverID) {
             toast(R.string.sender_and_receiver_same)
             return
         }
 
-        var date: String? = getDateFormatted(et_day.text.toString(), et_month.text.toString(), et_year.text.toString())
+        var date: String? = getDateFormatted(
+            et_day.text.toString(),
+            et_month.text.toString(),
+            et_year.text.toString()
+        )
         // elvis operator if(date == null ) return null
             ?: return
 
         var transactionMap: HashMap<String, Any> = HashMap<String, Any>()
 
         // loginId
-        var loggedInID: String? = null
-        if (mSignInProfile!!.isAdmin) {
-            loggedInID = mSignInProfile!!.adminID
-            transactionMap[LedgerDefine.VERIFIED] = true
-        } else if (mSignInProfile!!.isSupervisor) {
-            loggedInID = mSignInProfile!!.supervisorID
-            transactionMap[LedgerDefine.VERIFIED] = false
-        } else {
-            toast(R.string.error_07)
-            return
-        }
-        transactionMap[LedgerDefine.LOGGED_IN_ID] = loggedInID
+        var loggedInID: String? = mSignInProfile!!.userID
+        transactionMap[LedgerDefine.VERIFIED] = mSignInProfile!!.isAdmin
+
+        transactionMap[LedgerDefine.LOGGED_IN_ID] = loggedInID!!
         // amount
         transactionMap[LedgerDefine.AMOUNT] = amount.toLong()
 
@@ -306,10 +337,10 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
             transactionMap[LedgerDefine.PROJECT_ID] = mSelectedProject!!.projectID
         }
         //sender
-        transactionMap[LedgerDefine.SENDER_ID] = mSelectedSender!!.userID
+        transactionMap[LedgerDefine.SENDER_ID] = senderID!!
 
         //receiver
-        transactionMap[LedgerDefine.RECEIVER_ID] = mSelectedReceiver!!.userID
+        transactionMap[LedgerDefine.RECEIVER_ID] = receiverID!!
 
         // transaction date
         transactionMap[LedgerDefine.TRANSACTION_DATE] = date!!
@@ -319,8 +350,8 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
 
         // transaction type
         var transactionType: Int = -1
-        var senderDesignation = mSelectedSender!!.designation
-        var receiverDesignation = mSelectedReceiver!!.designation
+        var senderDesignation = getUserAccountDesignation(senderID)
+        var receiverDesignation = getUserAccountDesignation(receiverID)
         if (senderDesignation == LedgerDefine.DESIGNATION_ADMIN) {
             if (receiverDesignation == LedgerDefine.DESIGNATION_SUPERVISOR) {
                 transactionType = LedgerDefine.TRANSACTION_TYPE_ADMIN
@@ -377,20 +408,38 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
             saveDataToFireStore(transactionMap)
         }
 
-        var projectID:String? = ""
-        if(mSelectedProject != null ) projectID = mSelectedProject!!.projectID
-        var creditID:String = ""
-        if(mSelectedCreditAccount != null ) creditID = mSelectedCreditAccount!!.id
+        var projectID: String? = ""
+        if (mSelectedProject != null) projectID = mSelectedProject!!.projectID
+        var creditID: String = ""
+        if (mSelectedCreditAccount != null) creditID = mSelectedCreditAccount!!.id
         savePreferenceToDB(
             projectID,
-            mSelectedReceiver!!.userID,
+            receiverID,
             creditID,
             remarks
         )
 
     }
 
-    private fun savePreferenceToDB(projectID: String?, userID: String, creditAccount: String, remarks: String) {
+    private fun getUserAccountDesignation(userAccount: String): Long {
+        var type: Long = LedgerDefine.DESIGNATION_NORMAL
+        var prefix: String = userAccount.substring(0, 1)
+        if (prefix == "A") {
+            type = LedgerDefine.DESIGNATION_ADMIN
+        } else if (prefix == "M") {
+            type = LedgerDefine.DESIGNATION_SUPERVISOR
+        }
+        Log.d(TAG, "getUserAccountDesignation prefix : $prefix ,type = $type")
+        return type
+    }
+
+
+    private fun savePreferenceToDB(
+        projectID: String?,
+        userID: String,
+        creditAccount: String,
+        remarks: String
+    ) {
         var values = ContentValues()
         values.put(LedgerDefine.RECEIVER_ID, userID)
         values.put(LedgerDefine.PROJECT_ID, projectID)
@@ -403,7 +452,7 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
             LedgerDefine.RECEIVER_ID + " =?",
             selectionArgs
         )
-        Log.d(TAG, "savePreferenceToDB update count = "+count)
+        Log.d(TAG, "savePreferenceToDB update count = " + count)
         if (count <= 0) {
             mContext!!.contentResolver.insert(SqlDBFile.CONTENT_URI_TABLE_SUGGESTION, values)
             Log.d(TAG, "savePreferenceToDB inserted ")
@@ -412,12 +461,13 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun updateTransactionData(transactionMap: HashMap<String, Any>) {
         val db = FirebaseFirestore.getInstance()
-        val companyName = LedgerSharePrefManger(mContext).getCompanyName()
+        val companyName = LedgerSharePrefManger(mContext).getCompanyID()
         btn_save.isEnabled = false
         btn_save.setTextColor(Color.YELLOW)
         btn_save.setText(R.string.saving)
-        var docRef = db.collection(LedgerDefine.COMPANIES_SLASH + companyName + "/transactions")
-            .document(mTransactionIdToUpdate!!)
+        var docRef =
+            db.collection(LedgerDefine.COMPANIES_SLASH + companyName + LedgerDefine.SLASH_TRANSACTIONS)
+                .document(mTransactionIdToUpdate!!)
         docRef.update(transactionMap)
             .addOnSuccessListener(OnSuccessListener<Void> {
                 Log.d(TAG, "DocumentSnapshot successfully written!")
@@ -436,17 +486,27 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun saveDataToFireStore(transactionMap: HashMap<String, Any>) {
         val db = FirebaseFirestore.getInstance()
-        val companyName = LedgerSharePrefManger(mContext).getCompanyName()
+        val companyName = LedgerSharePrefManger(mContext).getCompanyID()
         btn_save.isEnabled = false
         btn_save.setTextColor(Color.YELLOW)
         btn_save.setText(R.string.saving)
-        var docRef = db.collection(LedgerDefine.COMPANIES_SLASH + companyName + "/transactions").document()
+        var docRef =
+            db.collection(LedgerDefine.COMPANIES_SLASH + companyName + LedgerDefine.SLASH_TRANSACTIONS)
+                .document()
         transactionMap[LedgerDefine.TRANSACTION_ID] = docRef.id
         docRef.set(transactionMap)
             .addOnSuccessListener(OnSuccessListener<Void> {
                 Log.d(TAG, "DocumentSnapshot successfully written!")
                 btn_save.setTextColor(Color.parseColor("#FF7C7B7B"))
                 btn_save.setText(R.string.saved)
+                updateTransactionAmountForUser(
+                    transactionMap[LedgerDefine.SENDER_ID],
+                    transactionMap[LedgerDefine.RECEIVER_ID],
+                    transactionMap[LedgerDefine.PROJECT_ID],
+                    transactionMap[LedgerDefine.DEBIT_ACCOUNT_ID],
+                    transactionMap[LedgerDefine.CREDIT_ACCOUNT_ID],
+                    transactionMap[LedgerDefine.AMOUNT]
+                )
                 showSnackBar()
 
             })
@@ -459,6 +519,164 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
 
     }
 
+    private fun updateTransactionAmountForUser(
+        senderUser: Any?,
+        receiverUser: Any?,
+        project: Any?,
+        debitAccount: Any?,
+        creditAccount: Any?,
+        payment: Any?
+    ) {
+        var senderID = senderUser.toString().substring(2)
+        var receiverID = receiverUser.toString().substring(2)
+
+        var senderPreFix = senderUser.toString().substring(0, 2)
+        var receiverPreFix = receiverUser.toString().substring(0, 2)
+
+        var senderMap = java.util.HashMap<String, Any>()
+        var receiverMap = java.util.HashMap<String, Any>()
+
+        var tempAmount = payment as Long
+        var senderAmount: Long = tempAmount
+        var receiverAmount: Long = tempAmount
+
+
+        for (user in mSenderList!!) {
+            if (senderID == user.userID) {
+                if (senderPreFix == LedgerDefine.PREFIX_MASTER) {
+                    senderAmount = user.m_Amount - senderAmount
+                    senderMap[LedgerDefine.M_AMOUNT] = senderAmount
+                } else {
+                    senderAmount = user.p_Payment - senderAmount
+                    senderMap[LedgerDefine.P_PAYMENT] = senderAmount
+                }
+
+                break
+            }
+        }
+
+        for (user in mReceiverList!!) {
+            if (receiverID == user.userID) {
+
+                if (receiverPreFix == LedgerDefine.PREFIX_MASTER) {
+                    receiverAmount += user.m_Amount
+                    receiverMap[LedgerDefine.M_AMOUNT] = receiverAmount
+                } else {
+                    receiverAmount += user.p_Payment
+                    receiverMap[LedgerDefine.P_PAYMENT] = receiverAmount
+                }
+                break
+            }
+        }
+
+        Log.d(TAG, "sender AMount " + senderAmount)
+        val companyName = LedgerSharePrefManger(mContext).getCompanyID()
+        val db = FirebaseFirestore.getInstance()
+        val batchUpdateUsers = db.batch()
+        var docRefSender =
+            db.collection(LedgerDefine.COMPANIES_SLASH + companyName + LedgerDefine.SLASH_USERS)
+                .document(senderID)
+        var docRefReceiver =
+            db.collection(LedgerDefine.COMPANIES_SLASH + companyName + LedgerDefine.SLASH_USERS)
+                .document(receiverID)
+
+
+        batchUpdateUsers.update(docRefSender, senderMap)
+
+        batchUpdateUsers.update(docRefReceiver, receiverMap)
+
+        batchUpdateUsers.commit().addOnCompleteListener {
+            // ...
+            toast(R.string.user_payment_updated)
+        }
+
+
+        var debitAccountAmount: Long = tempAmount
+        var debitID = debitAccount.toString()
+        var debitMap = java.util.HashMap<String, Any>()
+        val batchUpdateBankAccounts = db.batch()
+        if (!isEmpty(debitID)) {
+            for (details in mBankAccountList!!) {
+                if (debitID == details.id) {
+                    debitAccountAmount = details.amount - debitAccountAmount
+                    debitMap[LedgerDefine.AMOUNT] = debitAccountAmount
+                    var docRefBankAccount =
+                        db.collection(LedgerDefine.COMPANIES_SLASH + companyName + LedgerDefine.SLASH_BANK_ACCOUNTS)
+                            .document(debitID)
+                    batchUpdateBankAccounts.update(docRefBankAccount, debitMap)
+                    break
+                }
+
+            }
+        }
+
+        var creditAccountAmount: Long = tempAmount
+        var creditID = creditAccount.toString()
+        var creditMap = java.util.HashMap<String, Any>()
+
+        if (!isEmpty(creditID)) {
+            for (details in mBankAccountList!!) {
+                if (creditID == details.id) {
+                    creditAccountAmount += details.amount
+                    creditMap[LedgerDefine.AMOUNT] = creditAccountAmount
+                    var docRefBankAccount =
+                        db.collection(LedgerDefine.COMPANIES_SLASH + companyName + LedgerDefine.SLASH_BANK_ACCOUNTS)
+                            .document(creditID)
+                    batchUpdateBankAccounts.update(docRefBankAccount, creditMap)
+                    break
+                }
+
+            }
+        }
+
+        if (!isEmpty(creditID) || !isEmpty(debitID)) {
+            batchUpdateBankAccounts.commit().addOnCompleteListener {
+                // ...
+                toast(R.string.bank_accounts_updated)
+            }
+        }
+        if (project != null) {
+            var projectID = project.toString()
+            if (!isEmpty(projectID)) {
+                for (details in mProjectList!!) {
+                    if (projectID == details.projectID) {
+                        var basicAmount = details.amount
+
+                        if (receiverID == LedgerDefine.ADMIN_ID) {
+                            basicAmount += payment
+                        } else {
+                            basicAmount -= payment
+                        }
+                        var docRefProject =
+                            db.collection(LedgerDefine.COMPANIES_SLASH + companyName + LedgerDefine.SLASH_PROJECTS)
+                                .document(projectID)
+
+                        docRefProject.update(LedgerDefine.AMOUNT, basicAmount)
+                            .addOnSuccessListener(OnSuccessListener<Void> {
+                                toast(R.string.project_amount_updated)
+                            })
+                            .addOnFailureListener(OnFailureListener { e ->
+                                Log.w(TAG, "Error writing document", e)
+                                toast(R.string.error_09)
+                            })
+
+                        break
+                    }
+
+                }
+
+            }
+        }
+    }
+
+/*
+    override fun onBackPressed() {
+        val intent = Intent(this, GoogleSigninActivity::class.java)
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+        startActivity(intent)
+        finish()
+    }*/
+
     private fun showSnackBar() {
         val snackbar = Snackbar
             .make(coordinatorLayout, R.string.saved_successfully, Snackbar.LENGTH_INDEFINITE)
@@ -466,12 +684,14 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
                 btn_save.isEnabled = true
                 btn_save.setTextColor(Color.BLACK)
                 btn_save.setText(R.string.save)
+                et_amount.text.clear()
                 openDialog(LedgerDefine.SELECTION_TYPE_RECEIVER)
             }
         snackbar.setActionTextColor(Color.BLUE)
         val sbView = snackbar.view
         sbView.setBackgroundColor(Color.GREEN)
-        val textView = sbView.findViewById<View>(android.support.design.R.id.snackbar_text) as TextView
+        val textView =
+            sbView.findViewById<View>(android.support.design.R.id.snackbar_text) as TextView
         textView.setTextColor(Color.BLACK)
         snackbar.show()
     }
@@ -521,7 +741,7 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     private fun openDialog(type: Int) {
-        var fm = getSupportFragmentManager()
+        var fm = supportFragmentManager
         var dFragment = DialogFragmentToSelectUserOrProject()
         var bundle = Bundle()
         bundle.putInt(LedgerDefine.KEY_SELECTION_TYPE, type)
@@ -533,7 +753,7 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
     private fun getProjectList() {
         var db = FirestoreDataBase().db
 
-        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyName()
+        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyID()
 
         db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_PROJECTS)
             .get()
@@ -552,9 +772,9 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
 
         var db = FirestoreDataBase().db
 
-        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyName()
+        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyID()
 
-        db.collection(LedgerDefine.COMPANIES_SLASH + companyID + "/users")
+        db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_USERS)
             .get()
             .addOnCompleteListener(OnCompleteListener<QuerySnapshot> { task ->
                 if (task.isSuccessful) {
@@ -571,28 +791,33 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
             finish()
             return false
         }
-        val isAdmin = mSignInProfile!!.isAdmin
+        /*val isAdmin = mSignInProfile!!.isAdmin
         val isSuperVisor = mSignInProfile!!.isSupervisor
         val isNormalUser = mSignInProfile!!.isNormal
-        val accessedProjects = mSignInProfile!!.accesibleProjects
+        val accessedProjects = mSignInProfile!!.accesibleProjects*/
 
 
         for (document in task.result!!) {
             Log.d(TAG, document.id + " => " + document.data)
-            Log.d(TAG, " document.get(\"name\")+ => " + document.get("name"))
             // senderList
 
             val tempName = document.get(LedgerDefine.NAME)
-            val tempId = document.get(LedgerDefine.USER_ID)
+            var tempId = document.get(LedgerDefine.USER_ID)
             val tempDesignation = document.get(LedgerDefine.DESIGNATION)
             val tempIsAdmin = document.get(LedgerDefine.IS_ADMIN)
             val tempAccessedProjects = document.get(LedgerDefine.ACCESSIBLE_PROJECTS)
-
+            val UserAccounts = document.get(LedgerDefine.ACCOUNTS)
             val userDetails = UserDetails()
 
             if (tempName != null) userDetails.name = tempName as String
 
-            if (tempId != null) userDetails.userID = tempId as String
+            try {
+                tempId = (tempId as Long).toString()
+            } catch (e: ClassCastException) {
+                tempId = tempId as String
+            }
+
+            if (tempId != null) userDetails.userID = tempId.toString()
 
             if (tempDesignation != null) userDetails.designation = tempDesignation as Long
 
@@ -604,31 +829,44 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
                 userDetails.accesibleProjectsList = tempAccessedProjects as ArrayList<String>
             }
 
-            if (isAdmin) {
-                if (mEditType === LedgerDefine.TRANSACTION_EDIT_TYPE_MODIFY) {
-                    if (tempId == mReceiverIdToUpdate) {
-                        mSelectedReceiver = userDetails
-
-                        tv_receiver_id.text = userDetails.userID + "\n" + userDetails.name
-                    } else if (tempId == mSenderIdToUpdate) {
-                        mSelectedSender = userDetails
-                        tv_sender_id.text = userDetails.userID + "\n" + userDetails.name
-                    }
-                }
-                mReceiverList!!.add(userDetails)
-                mSenderList!!.add(userDetails)
-
-            } else if (isSuperVisor) {
-                addToReceiverList(userDetails, accessedProjects!!)
+            if (UserAccounts != null) {
+                userDetails.userAccounts = UserAccounts as ArrayList<String>
             }
+
+            var p_payment = document.get(LedgerDefine.P_PAYMENT)
+            if (p_payment != null) {
+                userDetails.p_Payment = p_payment as Long
+            }
+            var m_amount = document.get(LedgerDefine.M_AMOUNT)
+            if (m_amount != null) {
+                userDetails.m_Amount = m_amount as Long
+            }
+
+            //if (isAdmin) {
+            if (mEditType === LedgerDefine.TRANSACTION_EDIT_TYPE_MODIFY) {
+                if (tempId == mReceiverIdToUpdate) {
+                    mSelectedReceiver = userDetails
+
+                    tv_receiver_id.text = userDetails.userID + "\n" + userDetails.name
+                } else if (tempId == mSenderIdToUpdate) {
+                    mSelectedSender = userDetails
+                    tv_sender_id.text = userDetails.userID + "\n" + userDetails.name
+                }
+            }
+            mReceiverList!!.add(userDetails)
+            mSenderList!!.add(userDetails)
+
+            /*} else if (isSuperVisor) {
+                addToReceiverList(userDetails, accessedProjects!!)
+            }*/
         }
-        if (isSuperVisor) {
+        /*if (isSuperVisor) {
             val senderData = UserDetails()
-            senderData.userID = mSignInProfile!!.supervisorID
+            senderData.userID = mSignInProfile!!.userID
             senderData.name = mSignInProfile!!.name
             senderData.designation = LedgerDefine.DESIGNATION_SUPERVISOR
             mSenderList!!.add(senderData)
-            tv_sender_id.setText(senderData.userID + "\n" + senderData.name)
+            tv_sender_id.text = senderData.userID + "\n" + senderData.name
             tv_sender_id.setTextColor(Color.BLUE)
             mSelectedSender = senderData
             for (id in mSignInProfile!!.accesibleProjects!!) {
@@ -637,26 +875,26 @@ class AddTransactionActivity : AppCompatActivity(), View.OnClickListener {
                 projectDetails.projectID = id
                 mProjectList!!.add(projectDetails)
             }
-        }
+        }*/
         // ReceiverList
         return true
     }
 
-    private fun addToReceiverList(userDetail: UserDetails, projectAccess: ArrayList<String>) {
+/*private fun addToReceiverList(userDetail: UserDetails, projectAccess: ArrayList<String>) {
 
-        if (userDetail.accesibleProjectsList != null) {
-            for (projectID in projectAccess) {
-                for (tempProjectID in userDetail.accesibleProjectsList!!) {
-                    if (projectID == tempProjectID) {
-                        // doubt to == operator
-                        mReceiverList!!.add(userDetail)
-                        break
-                    }
+    if (userDetail.accesibleProjectsList != null) {
+        for (projectID in projectAccess) {
+            for (tempProjectID in userDetail.accesibleProjectsList!!) {
+                if (projectID == tempProjectID) {
+                    // doubt to == operator
+                    mReceiverList!!.add(userDetail)
+                    break
                 }
             }
-
         }
+
     }
+}*/
 
     var mSenderList: ArrayList<UserDetails>? = ArrayList<UserDetails>()
     var mReceiverList: ArrayList<UserDetails>? = ArrayList<UserDetails>()

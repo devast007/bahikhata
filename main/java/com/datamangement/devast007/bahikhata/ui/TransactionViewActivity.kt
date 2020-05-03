@@ -17,15 +17,16 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.AbsListView
+import android.widget.*
 import android.widget.AbsListView.OnScrollListener
 import android.widget.AbsListView.OnScrollListener.SCROLL_STATE_IDLE
-import android.widget.Toast
 import com.datamangement.devast007.bahikhata.R
 import com.datamangement.devast007.bahikhata.excel.TransactionsExcelSheet
 import com.datamangement.devast007.bahikhata.firestore.FirestoreDataBase
 import com.datamangement.devast007.bahikhata.ui.adapter.TransactionViewAdapter
 import com.datamangement.devast007.bahikhata.ui.fragment.DialogFragmentMoreInfo
+import com.datamangement.devast007.bahikhata.ui.fragment.DialogFragmentPDFColumnSelection
+import com.datamangement.devast007.bahikhata.ui.fragment.DialogFragmentTransactionFilter
 import com.datamangement.devast007.bahikhata.utils.LedgerDefine
 import com.datamangement.devast007.bahikhata.utils.LedgerSharePrefManger
 import com.datamangement.devast007.bahikhata.utils.LedgerUtils
@@ -34,15 +35,35 @@ import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.gms.tasks.OnFailureListener
 import com.google.android.gms.tasks.OnSuccessListener
 import com.google.firebase.firestore.*
-import com.google.firebase.firestore.EventListener
 import kotlinx.android.synthetic.main.activity_transaction_view.*
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 
-class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
+class TransactionViewActivity : AppCompatActivity(), View.OnClickListener,
+    CompoundButton.OnCheckedChangeListener,
+    AdapterView.OnItemLongClickListener {
 
+    private var isFilterOn: Boolean = false
+    private var mTransactionAdapter: TransactionViewAdapter? = null
+
+    var mTransactionList: ArrayList<TransactionDetails> = ArrayList()
+    var mMasterTransactionList: ArrayList<TransactionDetails> = ArrayList()
+    private var mMenuPdf: MenuItem? = null
+    var mPdfheading: String = "TRANSACTION"
+    var mSwitchProjectOrSender: Int = 0
+    private var mMenuSwitch: MenuItem? = null
+    private var mdragDownAdd: MenuItem? = null
+    public var mLongClickedForAddition: Boolean = false
+    private var mCancelAddition: MenuItem? = null
+    private var mAddTransaction: MenuItem? = null
+    private var mExcel: MenuItem? = null
+    private var mFilterMenu: MenuItem? = null
+    private var mSelectedCount: Int = 0
+    private var mAddition: Long = 0
+    private var mSentMenuItem: MenuItem? = null
+    private var mReceivedMenuItem: MenuItem? = null
     var mContext: Context? = null
     val TAG = "TransactionViewActivity"
     var mTransactionViewType = -1
@@ -50,6 +71,11 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
     private var mUserDesignation: Long = -1
     var mBankAccountsMap: HashMap<String, String> = HashMap<String, String>()
     var mUsersMap: HashMap<String, String> = HashMap<String, String>()
+    var mProjectsMap: HashMap<String, String> = HashMap<String, String>()
+    var mFilterListSender: ArrayList<String> = ArrayList<String>()
+    var mFilterListReceiver: ArrayList<String> = ArrayList<String>()
+    var mFilterListWork: ArrayList<String> = ArrayList<String>()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,53 +87,52 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
         mID = intent.getStringExtra(LedgerDefine.ID)
         mUserDesignation = intent.getLongExtra(LedgerDefine.DESIGNATION, -1)
 
-        if (mTransactionViewType != -1 && mID != null) {
-            supportActionBar!!.subtitle = mID
-        }
         getAccounts()
         getUsers()
-        getTransactions(-1)
-    }
+        getProjects()
 
-
-    private fun dataAdded(dc: DocumentChange?) {
-        if (mTransactionAdapter == null) return
-        val document = dc!!.document
-        val transactionID = document.get(LedgerDefine.TRANSACTION_ID).toString()
-        for (details in mTransactionList) {
-            if (details.transactionID == transactionID) return
+        var condition = -1
+        if (mTransactionViewType != -1 && mID != null) {
+            supportActionBar!!.subtitle = mID
+            condition = if (mTransactionViewType === LedgerDefine.TRANSACTION_VIEW_TYPE_USER) {
+                var preFix = mID!!.substring(0, 2)
+                if (preFix == LedgerDefine.PREFIX_PERSONAL) {
+                    RECEIVED
+                } else {
+                    SENT
+                }
+            } else {
+                RECEIVED
+            }
         }
-        Log.d(TAG, " dataAdded adding new item transactionID =  $transactionID")
-        var transactionDetail: TransactionDetails = TransactionDetails()
+        getTransactions(condition)
 
-        transactionDetail.senderId = document.get(LedgerDefine.SENDER_ID) as String
-        transactionDetail.receiverId = document.get(LedgerDefine.RECEIVER_ID) as String
-        transactionDetail.amount = document.get(LedgerDefine.AMOUNT) as Long
-        var projectID = document.get(LedgerDefine.PROJECT_ID)
-        if (projectID != null) transactionDetail.projectId = projectID as String
-        transactionDetail.transactionDate = document.get(LedgerDefine.TRANSACTION_DATE) as String
-        var timestamp = document.get(LedgerDefine.TIME_STAMP)
-        if (timestamp != null) transactionDetail.timeStamp = timestamp as Date
 
-        transactionDetail.transactionID = transactionID as String
-        transactionDetail.transactionType = document.get(LedgerDefine.TRANSACTION_TYPE) as Long
-        transactionDetail.loggedInID = document.get(LedgerDefine.LOGGED_IN_ID) as String
-        transactionDetail.verified = document.get(LedgerDefine.VERIFIED) as Boolean
-
-        var remark = document.get(LedgerDefine.REMARK)
-        if (remark != null) transactionDetail.remarks = remark as String
-
-        var debitAccount = document.get(LedgerDefine.DEBIT_ACCOUNT_ID)
-        if (debitAccount != null) transactionDetail.debitedTo = debitAccount.toString()
-
-        var creditAccount = document.get(LedgerDefine.CREDIT_ACCOUNT_ID)
-        if (creditAccount != null) transactionDetail.creditedTo = creditAccount.toString()
-
-        var paymentMode = document.get(LedgerDefine.PAYMENT_MODE)
-        if (paymentMode != null) transactionDetail.paymentMode = paymentMode.toString()
-        mTransactionList.add(0, transactionDetail)
-        setAdapter()
     }
+
+    private fun getProjects() {
+        val db = FirestoreDataBase().db
+        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyID()
+        db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_PROJECTS)
+            .get()
+            .addOnCompleteListener(OnCompleteListener<QuerySnapshot> { task ->
+                if (task.isSuccessful) {
+                    for (document in task.result!!) {
+                        val id = document.id.toString()
+                        mProjectsMap[id] =
+                            document.get(LedgerDefine.NICKNAME).toString()
+                        if (mTransactionViewType == LedgerDefine.TRANSACTION_VIEW_TYPE_PROJECT && id == mID) {
+                            supportActionBar!!.subtitle =
+                                document.get(LedgerDefine.NICKNAME).toString()
+                        }
+                    }
+                } else {
+                    Log.d(TAG, "Error getting documents: ", task.exception)
+                    Toast.makeText(mContext, R.string.error_01, Toast.LENGTH_LONG).show()
+                }
+            })
+    }
+
 
     override fun onStart() {
         super.onStart()
@@ -120,7 +145,11 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
                 return true
             } else {
 
-                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), 1)
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                    1
+                )
                 return false
             }
         } else { //permission is automatically granted on sdk<23 upon installation
@@ -145,10 +174,8 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
         query.get()
             .addOnCompleteListener(OnCompleteListener<QuerySnapshot> { task ->
                 if (task.isSuccessful) {
-                    Log.d(TAG, "task.isSuccessful")
                     var queryDocs = task.result!!
                     for (doc: QueryDocumentSnapshot in queryDocs) {
-                        Log.d(TAG, doc.id + " => " + doc.data)
                         setSetTransaction(doc)
                     }
                     registerLocalBroadcastReceiver()
@@ -156,13 +183,12 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
                     if (isEmpty(mID)) {
                         mID = "ALL"
                     }
-                    TransactionsExcelSheet(mContext, mID, mTransactionList).writeToSheet()
+                    TransactionsExcelSheet(mContext, mID, mMasterTransactionList).writeToSheet()
 
                     // test-1 ends
                     if (expandable_list_view.count <= 0) {
                         setAdapter()
                     } else {
-                        Log.d(TAG, "mTransactionAdapter: notifyDataSetChanged  " + mTransactionAdapter)
                         if (mTransactionAdapter != null) {
                             mTransactionAdapter!!.notifyDataSetChanged()
                             expandable_list_view.requestLayout()
@@ -193,27 +219,34 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
                 try {
                     var builder = AlertDialog.Builder(mContext);
                     builder.setMessage("File Is Downloaded...")
-                        .setPositiveButton("OPEN", DialogInterface.OnClickListener { dialogInterface, i ->
-                            val newIntent = Intent(Intent.ACTION_VIEW)
-                            newIntent.setDataAndType(Uri.parse("file://$filePath"), dataType)
-                            newIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        .setPositiveButton(
+                            "OPEN",
+                            DialogInterface.OnClickListener { dialogInterface, i ->
+                                val newIntent = Intent(Intent.ACTION_VIEW)
+                                newIntent.setDataAndType(Uri.parse("file://$filePath"), dataType)
+                                newIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
 
-                            mContext!!.startActivity(newIntent)
-                        })
-                        .setNegativeButton("SHARE", DialogInterface.OnClickListener { dialogInterface, i ->
-                            var intentShareFile = Intent(Intent.ACTION_SEND);
+                                mContext!!.startActivity(newIntent)
+                            })
+                        .setNegativeButton(
+                            "SHARE",
+                            DialogInterface.OnClickListener { dialogInterface, i ->
+                                var intentShareFile = Intent(Intent.ACTION_SEND);
 
-                            intentShareFile.setType(dataType);
-                            intentShareFile.putExtra(Intent.EXTRA_STREAM, Uri.parse("file://$filePath"));
+                                intentShareFile.setType(dataType);
+                                intentShareFile.putExtra(
+                                    Intent.EXTRA_STREAM,
+                                    Uri.parse("file://$filePath")
+                                );
 
-                            intentShareFile.putExtra(
-                                Intent.EXTRA_SUBJECT,
-                                "Sharing File..."
-                            );
-                            intentShareFile.putExtra(Intent.EXTRA_TEXT, "Sharing File...");
+                                intentShareFile.putExtra(
+                                    Intent.EXTRA_SUBJECT,
+                                    "Sharing File..."
+                                );
+                                intentShareFile.putExtra(Intent.EXTRA_TEXT, "Sharing File...");
 
-                            startActivity(Intent.createChooser(intentShareFile, "Share File"));
-                        }).show()
+                                startActivity(Intent.createChooser(intentShareFile, "Share File"));
+                            }).show()
                 } catch (e: Exception) {
                     toast(R.string.file_not_found)
                 }
@@ -224,22 +257,29 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         getMenuInflater().inflate(R.menu.menu_transaction_view, menu)
-        val received = menu!!.findItem(R.id.action_received)
-        val sent = menu!!.findItem(R.id.action_send)
-        val excel = menu!!.findItem(R.id.action_excel)
+        mReceivedMenuItem = menu!!.findItem(R.id.action_received)
+        mSentMenuItem = menu!!.findItem(R.id.action_send)
+        mExcel = menu!!.findItem(R.id.action_excel)
+        mFilterMenu = menu!!.findItem(R.id.action_filter)
+        mAddTransaction = menu!!.findItem(R.id.action_add)
+        mCancelAddition = menu!!.findItem(R.id.action_cancel_addition)
+        mdragDownAdd = menu!!.findItem(R.id.action_drag_down_for_addition)
+        mMenuSwitch = menu!!.findItem(R.id.action_switch)
+        mMenuPdf = menu!!.findItem(R.id.action_pdf)
 
-        if (received != null) {
+
+        if (mReceivedMenuItem != null) {
             if (mTransactionViewType == LedgerDefine.TRANSACTION_VIEW_TYPE_USER || mTransactionViewType == LedgerDefine.TRANSACTION_VIEW_TYPE_BANK_ACCOUNT)
-                received.isVisible = true
+                mReceivedMenuItem!!.isVisible = true
         }
-        if (sent != null) {
+        if (mSentMenuItem != null) {
             if (mTransactionViewType == LedgerDefine.TRANSACTION_VIEW_TYPE_USER || mTransactionViewType == LedgerDefine.TRANSACTION_VIEW_TYPE_BANK_ACCOUNT)
-                sent.isVisible = true
+                mSentMenuItem!!.isVisible = true
         }
 
-        if (excel != null) {
-            excel.isVisible = LedgerUtils.signInProfile!!.isAdmin
-        }
+        //if (excel != null) {
+        //  excel.isVisible = LedgerUtils.signInProfile!!.isAdmin
+        //}
 
         return true
     }
@@ -252,31 +292,205 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
                 return true
             }
             R.id.action_received -> {
-                mTransactionList.clear()
-                mLastDoc = null
-                mIsNoMoreDocs = false
-                setAdapter()
+                resetFields()
+
                 getTransactions(RECEIVED)
+                //item.setIcon(R.mipmap.icon_incoming_disabled)
+                //mSentMenuItem!!.setIcon(R.mipmap.icon_outgoing_red_arrow)
                 return true
             }
             R.id.action_send -> {
-                mTransactionList.clear()
-                setAdapter()
-                mLastDoc = null
-                mIsNoMoreDocs = false
+                resetFields()
                 getTransactions(SENT)
+               // item.setIcon(R.mipmap.icon_outgoing_disabled)
+               // mReceivedMenuItem!!.setIcon(R.mipmap.icon_incoming_green_arrow)
                 return true
             }
             R.id.action_excel -> createExcelSheet()
+            R.id.action_cancel_addition -> setNormalMenu(true)
+            R.id.action_drag_down_for_addition -> dragDownAddition()
+            R.id.action_switch -> switchBtnClicked()
+            R.id.action_pdf -> createPdfDialog()
+            R.id.action_pdf -> createPdfDialog()
+            R.id.action_filter -> filterDialog()
         }
 
         return super.onOptionsItemSelected(item)
     }
 
+    private fun resetFields() {
+        mFilterListReceiver.clear()
+        mFilterListSender.clear()
+        mFilterListWork.clear()
+        isFilterOn = false
 
-    private var mTransactionAdapter: TransactionViewAdapter? = null
+        mMasterTransactionList.clear()
+        mTransactionList.clear()
 
-    private var mTransactionList: ArrayList<TransactionDetails> = ArrayList()
+        mLastDoc = null
+        mIsNoMoreDocs = false
+        setAdapter()
+    }
+
+    private fun filterDialog() {
+        var fm = supportFragmentManager
+        var dFragment = DialogFragmentTransactionFilter()
+        // Show DialogFragment
+        dFragment.show(fm, "Transaction Filter Dialog Fragment")
+
+    }
+
+    private fun createPdfDialog() {
+
+        if (mID == null) {
+            mPdfheading = "ALL"
+        } else {
+
+            mPdfheading = when (mTransactionViewType) {
+                LedgerDefine.TRANSACTION_VIEW_TYPE_PROJECT -> {
+                    mProjectsMap[mID!!]!!
+                }
+                LedgerDefine.TRANSACTION_VIEW_TYPE_BANK_ACCOUNT -> {
+                    mBankAccountsMap[mID!!]!!
+                }
+                else -> {
+                    mUsersMap[mID!!.substring(2)]!!
+                }
+            }
+        }
+        var fm = supportFragmentManager
+        var dFragment = DialogFragmentPDFColumnSelection()
+        // Show DialogFragment
+        dFragment.show(fm, " create pdf Dialog Fragment")
+
+    }
+
+    private fun switchBtnClicked() {
+        mSwitchProjectOrSender = when (mSwitchProjectOrSender) {
+            0 -> {
+                1
+            }
+            1 -> {
+                2
+            }
+            else -> {
+                0
+            }
+        }
+        val firstVisiblePos = expandable_list_view.firstVisiblePosition
+        setAdapter()
+        expandable_list_view.setSelection(firstVisiblePos)
+    }
+
+    private fun dragDownAddition() {
+
+        // looking for 2nd checked item in visible zone
+        val firstVisiblePos = expandable_list_view.firstVisiblePosition
+        val lastVisiblePos = expandable_list_view.lastVisiblePosition
+
+        var lastCheckedPos = lastVisiblePos
+        var firstCheckedPos = 0
+        var lastItemCheckedID: String? = null
+        while (lastCheckedPos >= firstVisiblePos) {
+            if (mTransactionList[lastCheckedPos].isChecked) {
+                lastItemCheckedID = mTransactionList[lastCheckedPos].transactionID
+                break
+            }
+            lastCheckedPos--
+        }
+
+        if (lastItemCheckedID == null) {
+            Toast.makeText(this, "last position not found", Toast.LENGTH_LONG).show()
+            return
+        }
+
+
+
+        for (detail in mTransactionList) {
+            var firstItemCheckedId: String? = null
+            if (detail.isChecked) {
+                if (firstItemCheckedId == null) {
+                    firstItemCheckedId = detail.transactionID
+
+                }
+                if (firstItemCheckedId == lastItemCheckedID) {
+                    Toast.makeText(this, "Only One selection", Toast.LENGTH_LONG).show()
+                    return
+                } else if (firstItemCheckedId != null) {
+                    break
+                }
+            }
+            firstCheckedPos++
+        }
+
+        var totalAmount: Long = 0
+        // get position of first checked item
+        var count = 1
+        var isAdditionDone = false
+        var size = mTransactionList.size - firstCheckedPos
+        while (firstCheckedPos < size) {
+            var detail = mTransactionList[firstCheckedPos]
+
+            if (isAdditionDone) {
+                detail.isChecked = false
+            } else {
+                detail.isChecked = true
+                totalAmount += detail.amount
+            }
+            if (detail.transactionID == lastItemCheckedID) {
+                mAddition = totalAmount
+                mSelectedCount = count
+                Log.d("TEST", " total amount" + totalAmount)
+                supportActionBar!!.title =
+                    "" + LedgerUtils.getRupeesFormatted(mAddition) + " [$mSelectedCount]"
+                setAdapter()
+                expandable_list_view.setSelection(firstVisiblePos)
+                isAdditionDone = true
+            }
+
+            count++
+            firstCheckedPos++
+        }
+
+    }
+
+    private fun setNormalMenu(isNormal: Boolean) {
+        if (isNormal) {
+            mLongClickedForAddition = false
+            mReceivedMenuItem!!.isVisible = true
+            mSentMenuItem!!.isVisible = true
+            mExcel!!.isVisible = true
+            mAddTransaction!!.isVisible = true
+            mMenuSwitch!!.isVisible = true
+            mFilterMenu!!.isVisible = true
+
+            mdragDownAdd!!.isVisible = false
+            mCancelAddition!!.isVisible = false
+            mMenuPdf!!.isVisible = false
+
+            for (detail in mTransactionList) {
+                detail.isChecked = false
+            }
+        } else {
+            mLongClickedForAddition = true
+            mReceivedMenuItem!!.isVisible = false
+            mSentMenuItem!!.isVisible = false
+            mExcel!!.isVisible = false
+            mAddTransaction!!.isVisible = false
+            mMenuSwitch!!.isVisible = false
+            mFilterMenu!!.isVisible = false
+
+            mdragDownAdd!!.isVisible = true
+            mCancelAddition!!.isVisible = true
+            mMenuPdf!!.isVisible = true
+        }
+        mAddition = 0
+        mSelectedCount = 0
+        supportActionBar!!.title =
+            "" + LedgerUtils.getRupeesFormatted(mAddition) + " [$mSelectedCount]"
+        setAdapter()
+    }
+
 
     var mScrollListener: OnScrollListener = object : OnScrollListener {
 
@@ -302,10 +516,13 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun setAdapter() {
         if (mTransactionAdapter == null) {
-            mTransactionAdapter = TransactionViewAdapter(this, mTransactionList)
+            mTransactionAdapter =
+                TransactionViewAdapter(this, mTransactionList, mLongClickedForAddition)
         }
         expandable_list_view.setAdapter(mTransactionAdapter)
         expandable_list_view.setOnScrollListener(mScrollListener)
+
+        expandable_list_view.setOnItemLongClickListener(this)
     }
 
     override fun onClick(view: View?) {
@@ -321,7 +538,31 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
             R.id.tv_transaction_debited_to,
             R.id.tv_transaction_credited_to -> viewAccountDetail(view)
             R.id.tv_edit_transaction -> editTransaction(view);
+            R.id.cb_for_addition -> addTransactions(view)
         }
+    }
+
+    private fun addTransactions(view: View) {
+        val checkBox: CheckBox = view as CheckBox
+        val amount = checkBox!!.getTag(R.string.tag_amount) as Long
+        val transactionID = checkBox!!.getTag(R.string.tag_transaction_id) as String
+        if (checkBox.isChecked) {
+            mAddition += amount
+            mSelectedCount += 1
+        } else {
+            mAddition -= amount
+            mSelectedCount -= 1
+        }
+
+        for (detail in mTransactionList) {
+            if (detail.transactionID == transactionID) {
+                detail.isChecked = checkBox.isChecked
+                break
+            }
+        }
+        supportActionBar!!.title =
+            "" + LedgerUtils.getRupeesFormatted(mAddition) + " [$mSelectedCount]"
+
     }
 
     private fun editTransaction(view: View) {
@@ -329,7 +570,10 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
         for (list in mTransactionList) {
             if (transactionID == list.transactionID) {
                 var intent = Intent(mContext, AddTransactionActivity::class.java)
-                intent.putExtra(LedgerDefine.TRANSACTION_EDIT_TYPE, LedgerDefine.TRANSACTION_EDIT_TYPE_MODIFY)
+                intent.putExtra(
+                    LedgerDefine.TRANSACTION_EDIT_TYPE,
+                    LedgerDefine.TRANSACTION_EDIT_TYPE_MODIFY
+                )
                 intent.putExtra(LedgerDefine.TRANSACTION_ID, list.transactionID)
                 intent.putExtra(LedgerDefine.PROJECT_ID, list.projectId)
                 intent.putExtra(LedgerDefine.AMOUNT, "" + list.amount)
@@ -340,6 +584,7 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
                 intent.putExtra(LedgerDefine.PAYMENT_MODE, list.paymentMode)
                 intent.putExtra(LedgerDefine.REMARK, list.remarks)
                 intent.putExtra(LedgerDefine.TRANSACTION_DATE, list.transactionDate)
+
                 startActivity(intent)
                 break
             }
@@ -354,7 +599,7 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
         }
         showSnackBar(accountID)
         val db = FirestoreDataBase().db
-        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyName()
+        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyID()
         db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_BANK_ACCOUNTS)
             .whereEqualTo(LedgerDefine.BANK_ACCOUNT_ID, accountID)
             .get()
@@ -380,15 +625,13 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
         }
         showSnackBar(userID)
         val db = FirestoreDataBase().db
-        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyName()
-        db.collection(LedgerDefine.COMPANIES_SLASH + companyID + "/users")
-            .whereEqualTo(LedgerDefine.USER_ID, userID)
+        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyID()
+        db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_USERS)
+            .whereEqualTo(LedgerDefine.USER_ID, userID.toLong())
             .get()
             .addOnCompleteListener(OnCompleteListener<QuerySnapshot> { task ->
                 if (task.isSuccessful) {
                     for (document in task.result!!) {
-                        Log.d(TAG, document.id + " => " + document.data)
-                        Log.d(TAG, " document.get(\"name\")+ => " + document.get("name"))
                         showUserMoreInfoDialog(document)
                         break
                     }
@@ -411,7 +654,10 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
         var bundle = Bundle()
         bundle.putInt(LedgerDefine.MORE_INFO_TYPE, LedgerDefine.MORE_INFO_TYPE_ACCOUNT)
 
-        bundle.putString(LedgerDefine.BANK_ACCOUNT_ID, document!!.get(LedgerDefine.BANK_ACCOUNT_ID).toString())
+        bundle.putString(
+            LedgerDefine.BANK_ACCOUNT_ID,
+            document!!.get(LedgerDefine.BANK_ACCOUNT_ID).toString()
+        )
         bundle.putString(
             LedgerDefine.BANK_ACCOUNT_NUMBER,
             document!!.get(LedgerDefine.BANK_ACCOUNT_NUMBER).toString()
@@ -420,9 +666,22 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
         if (amount != null) {
             bundle.putLong(LedgerDefine.AMOUNT, amount as Long)
         }
-        bundle.putString(LedgerDefine.TIME_STAMP, document!!.get(LedgerDefine.TIME_STAMP).toString())
+
+
+        var timestamp = document.get(LedgerDefine.TIME_STAMP)
+        if (timestamp != null) {
+            try {
+                timestamp = timestamp as String
+            } catch (e: java.lang.ClassCastException) {
+                timestamp = (timestamp as Date).toString()
+            }
+        }
+        bundle.putString(LedgerDefine.TIME_STAMP, timestamp.toString())
         bundle.putString(LedgerDefine.IFSC_CODE, document!!.get(LedgerDefine.IFSC_CODE).toString())
-        bundle.putString(LedgerDefine.PAYEE_NAME, document!!.get(LedgerDefine.PAYEE_NAME).toString())
+        bundle.putString(
+            LedgerDefine.PAYEE_NAME,
+            document!!.get(LedgerDefine.PAYEE_NAME).toString()
+        )
         bundle.putString(
             LedgerDefine.BANK_ACCOUNT_BRANCH_NAME,
             document!!.get(LedgerDefine.BANK_ACCOUNT_BRANCH_NAME).toString()
@@ -442,13 +701,53 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
 
         bundle.putString(LedgerDefine.USER_ID, document!!.get(LedgerDefine.USER_ID).toString())
         bundle.putString(LedgerDefine.NAME, document!!.get(LedgerDefine.NAME).toString())
-        var amount = document!!.get(LedgerDefine.AMOUNT)
-        if (amount != null) {
-            bundle.putLong(LedgerDefine.AMOUNT, amount as Long)
+        // personal
+        var materialCost = document.get(LedgerDefine.P_MATERIAL_COST)
+        if (materialCost != null) materialCost = materialCost as Long
+        var payment = document.get(LedgerDefine.P_PAYMENT)
+        if (payment != null) payment = payment as Long
+        var gstBill = document.get(LedgerDefine.P_GST_BILL)
+        if (gstBill != null) gstBill = gstBill as Long
+        // master
+        var masterAmount = document.get(LedgerDefine.M_AMOUNT)
+        if (masterAmount != null) masterAmount = masterAmount as Long
+
+        if (materialCost != null) {
+            bundle.putLong(LedgerDefine.P_MATERIAL_COST, materialCost as Long)
         }
+
+        if (payment != null) {
+            bundle.putLong(LedgerDefine.P_PAYMENT, payment as Long)
+        }
+
+        if (gstBill != null) {
+            bundle.putLong(LedgerDefine.P_GST_BILL, gstBill as Long)
+        }
+
+        if (masterAmount != null) {
+            bundle.putLong(LedgerDefine.M_AMOUNT, masterAmount as Long)
+        }
+
+
+
+
+
         bundle.putString(LedgerDefine.ADDRESS, document!!.get(LedgerDefine.ADDRESS).toString())
-        bundle.putString(LedgerDefine.TIME_STAMP, document!!.get(LedgerDefine.TIME_STAMP).toString())
-        bundle.putString(LedgerDefine.PHONE_NUMBER, document!!.get(LedgerDefine.PHONE_NUMBER).toString())
+
+        var timestamp = document.get(LedgerDefine.TIME_STAMP)
+        if (timestamp != null) {
+            try {
+                timestamp = timestamp as String
+            } catch (e: java.lang.ClassCastException) {
+                timestamp = (timestamp as Date).toString()
+            }
+        }
+
+        bundle.putString(LedgerDefine.TIME_STAMP, timestamp.toString())
+        bundle.putString(
+            LedgerDefine.PHONE_NUMBER,
+            document!!.get(LedgerDefine.PHONE_NUMBER).toString()
+        )
         bundle.putString(LedgerDefine.EMAIL, document!!.get(LedgerDefine.EMAIL).toString())
         var designation = document!!.get(LedgerDefine.DESIGNATION)
         if (designation != null) {
@@ -457,8 +756,17 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
 
         var projects = document!!.get(LedgerDefine.ACCESSIBLE_PROJECTS)
         if (projects != null) {
-            bundle.putString(LedgerDefine.ACCESSIBLE_PROJECTS, (projects as ArrayList<String>).toString())
+            bundle.putString(
+                LedgerDefine.ACCESSIBLE_PROJECTS,
+                (projects as ArrayList<String>).toString()
+            )
         }
+
+        var userAccounts = document!!.get(LedgerDefine.ACCOUNTS)
+        if (userAccounts != null) {
+            bundle.putInt(LedgerDefine.USER_ACCOUNT_COUNT, (userAccounts as ArrayList<String>).size)
+        }
+
         bundle.putString(LedgerDefine.REMARK, document!!.get(LedgerDefine.REMARK).toString())
 
         dFragment.arguments = bundle
@@ -473,15 +781,13 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
         }
         showSnackBar(projectID)
         val db = FirestoreDataBase().db
-        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyName()
+        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyID()
         db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_PROJECTS)
             .whereEqualTo(LedgerDefine.PROJECT_ID, projectID)
             .get()
             .addOnCompleteListener(OnCompleteListener<QuerySnapshot> { task ->
                 if (task.isSuccessful) {
                     for (document in task.result!!) {
-                        Log.d(TAG, document.id + " => " + document.data)
-                        Log.d(TAG, " document.get(\"name\")+ => " + document.get("name"))
 
                         showProjectMoreInfoDialog(document)
                         break
@@ -499,20 +805,30 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
         var bundle = Bundle()
         bundle.putInt(LedgerDefine.MORE_INFO_TYPE, LedgerDefine.MORE_INFO_TYPE_PROJECT)
 
-        bundle.putString(LedgerDefine.PROJECT_ID, document!!.get(LedgerDefine.PROJECT_ID).toString())
+        bundle.putString(
+            LedgerDefine.PROJECT_ID,
+            document!!.get(LedgerDefine.PROJECT_ID).toString()
+        )
         bundle.putString(LedgerDefine.NAME, document!!.get(LedgerDefine.NAME).toString())
+        bundle.putString(LedgerDefine.NICKNAME, document!!.get(LedgerDefine.NICKNAME).toString())
 
         var amount = document!!.get(LedgerDefine.AMOUNT)
         if (amount != null) bundle.putLong(LedgerDefine.AMOUNT, amount as Long)
         bundle.putString(LedgerDefine.ADDRESS, document!!.get(LedgerDefine.ADDRESS).toString())
         bundle.putString(LedgerDefine.DIVISION, document!!.get(LedgerDefine.DIVISION).toString())
-        bundle.putString(LedgerDefine.START_DATE, document!!.get(LedgerDefine.START_DATE).toString())
+        bundle.putString(
+            LedgerDefine.START_DATE,
+            document!!.get(LedgerDefine.START_DATE).toString()
+        )
         bundle.putString(LedgerDefine.END_DATE, document!!.get(LedgerDefine.END_DATE).toString())
         bundle.putString(LedgerDefine.REMARK, getStringFormDoc(document, LedgerDefine.REMARK))
 
         bundle.putString(LedgerDefine.MB_NO, getStringFormDoc(document, LedgerDefine.MB_NO))
         bundle.putString(LedgerDefine.HEAD, getStringFormDoc(document, LedgerDefine.HEAD))
-        bundle.putString(LedgerDefine.MAIN_AMOUNT, getStringFormDoc(document, LedgerDefine.MAIN_AMOUNT))
+        bundle.putString(
+            LedgerDefine.MAIN_AMOUNT,
+            getStringFormDoc(document, LedgerDefine.MAIN_AMOUNT)
+        )
         bundle.putString(
             LedgerDefine.MAINTENANCE_1ST_YEAR_AMOUNT,
             getStringFormDoc(document, LedgerDefine.MAINTENANCE_1ST_YEAR_AMOUNT)
@@ -534,6 +850,17 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
             getStringFormDoc(document, LedgerDefine.MAINTENANCE_5TH_YEAR_AMOUNT)
         )
 
+        var timestamp = document.get(LedgerDefine.TIME_STAMP)
+
+        if (timestamp != null) {
+            try {
+                timestamp = timestamp as String
+            } catch (e: java.lang.ClassCastException) {
+                timestamp = (timestamp as Date).toString()
+            }
+        }
+        bundle.putString(LedgerDefine.TIME_STAMP, timestamp.toString())
+
         dFragment.arguments = bundle
         // Show DialogFragment
         dFragment.show(fm, "Project More Info ")
@@ -545,19 +872,16 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
             return
         }
         val db = FirestoreDataBase().db
-        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyName()
-        Log.d(TAG, "companyID => " + companyID)
+        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyID()
 
-        db.collection(LedgerDefine.COMPANIES_SLASH + companyID + "/transactions").document(tid)
+        db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_TRANSACTIONS)
+            .document(tid)
             .delete()
             .addOnSuccessListener(OnSuccessListener<Void> {
-                Log.d(
-                    TAG,
-                    "DocumentSnapshot successfully deleted!"
-                )
                 toast(R.string.transaction_deleted)
             })
-            .addOnFailureListener(OnFailureListener { e -> Log.w(TAG, "Error deleting document", e) })
+            .addOnFailureListener(OnFailureListener { e ->
+            })
     }
 
     private fun btnVerifyClicked(view: View) {
@@ -566,14 +890,15 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
             return
         }
         val db = FirestoreDataBase().db
-        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyName()
+        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyID()
 
-        val docRef = db.collection(LedgerDefine.COMPANIES_SLASH + companyID + "/transactions").document(tid)
+        val docRef =
+            db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_TRANSACTIONS)
+                .document(tid)
 
         docRef
             .update(LedgerDefine.VERIFIED, true)
             .addOnSuccessListener {
-                Log.d(TAG, "DocumentSnapshot successfully updated!")
                 toast(R.string.transaction_verified)
             }
             .addOnFailureListener { e ->
@@ -589,7 +914,7 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun launchTransactionViewActivity(view: View) {
         val projectId = view.getTag(R.string.tag_project_id)
-        Toast.makeText(this, "Not Implement yet !! " + projectId, Toast.LENGTH_LONG).show()
+        Toast.makeText(this, "Not Implement yet !! $projectId", Toast.LENGTH_LONG).show()
     }
 
     override fun onDestroy() {
@@ -612,7 +937,6 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
     private var mIsNoMoreDocs: Boolean = false
 
     private fun getTransactions(conditionForUser: Int) {
-        Log.d(TAG, "task.isSuccessful mIsNoMoreDocs = " + mIsNoMoreDocs)
         if (mIsNoMoreDocs) {
             toast(R.string.loading_finished)
             return
@@ -625,10 +949,8 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
         query.get()
             .addOnCompleteListener(OnCompleteListener<QuerySnapshot> { task ->
                 if (task.isSuccessful) {
-                    Log.d(TAG, "task.isSuccessful")
                     var queryDocs = task.result!!
                     for (doc: QueryDocumentSnapshot in queryDocs) {
-                        Log.d(TAG, doc.id + " => " + doc.data)
                         setSetTransaction(doc)
                     }
                     if (queryDocs.isEmpty) {
@@ -640,14 +962,14 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
                     if (expandable_list_view.count <= 0) {
                         setAdapter()
                     } else {
-                        Log.d(TAG, "mTransactionAdapter: notifyDataSetChanged  " + mTransactionAdapter)
                         if (mTransactionAdapter != null) {
                             mTransactionAdapter!!.notifyDataSetChanged()
                             expandable_list_view.requestLayout()
                         }
                     }
-                    //setDataSetChangeListener(query)
-                    // this is for skip updating duplicate amount for project or users after verification is done.
+                    if(!mIsNoMoreDocs && isFilterOn){
+                        getTransactions(mConditionForUser)
+                    }
                 } else {
                     Log.d(TAG, "Error getting documents: ", task.exception)
                     Toast.makeText(mContext, R.string.error_01, Toast.LENGTH_LONG).show()
@@ -656,91 +978,6 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
 
     }
 
-
-    private fun setDataSetChangeListener(query: Query) {
-        if (mRegistration != null) {
-            mRegistration!!.remove()
-        }
-        mRegistration = query
-            .addSnapshotListener(EventListener<QuerySnapshot>() { querySnapshot: QuerySnapshot?, firebaseFirestoreException: FirebaseFirestoreException? ->
-                if (firebaseFirestoreException != null) {
-                    Log.w(TAG, "listen:error", firebaseFirestoreException);
-                    return@EventListener;
-                }
-
-                for (dc in querySnapshot!!.documentChanges) {
-                    Log.d(TAG, " dc.type =  " + dc.type)
-                    when (dc.type) {
-                        DocumentChange.Type.ADDED -> dataAdded(dc)
-                        DocumentChange.Type.MODIFIED -> dataModified(dc)
-                        DocumentChange.Type.REMOVED -> dataDeleted(dc)
-                    }
-                }
-
-            });
-    }
-
-    private fun dataDeleted(dc: DocumentChange?) {
-
-        val document = dc!!.document
-        if (document != null) {
-            val transactionID = document.get(LedgerDefine.TRANSACTION_ID).toString()
-
-            for (details in mTransactionList) {
-                if (details.transactionID === transactionID) {
-                    mTransactionList.remove(details)
-                    break
-                }
-            }
-            setAdapter()
-        }
-
-    }
-
-    private fun dataModified(dc: DocumentChange?) {
-        var isIDFound = false
-        var transactionDetail: TransactionDetails? = null
-        val document = dc!!.document
-        val transactionID = document.get(LedgerDefine.TRANSACTION_ID).toString()
-        for (detail in mTransactionList) {
-            if (detail.transactionID == transactionID) {
-                isIDFound = true
-                transactionDetail = detail
-                break
-            }
-        }
-        if (!isIDFound) return
-
-
-
-        transactionDetail!!.senderId = document.get(LedgerDefine.SENDER_ID) as String
-        transactionDetail!!.receiverId = document.get(LedgerDefine.RECEIVER_ID) as String
-        transactionDetail!!.amount = document.get(LedgerDefine.AMOUNT) as Long
-        var projectID = document.get(LedgerDefine.PROJECT_ID)
-        if (projectID != null) transactionDetail.projectId = projectID as String
-        transactionDetail!!.transactionDate = document.get(LedgerDefine.TRANSACTION_DATE) as String
-        var timestamp = document.get(LedgerDefine.TIME_STAMP)
-        if (timestamp != null) transactionDetail!!.timeStamp = timestamp as Date
-        transactionDetail!!.transactionID = transactionID as String
-        transactionDetail!!.transactionType = document.get(LedgerDefine.TRANSACTION_TYPE) as Long
-        transactionDetail!!.loggedInID = document.get(LedgerDefine.LOGGED_IN_ID) as String
-        transactionDetail!!.verified = document.get(LedgerDefine.VERIFIED) as Boolean
-
-        var remark = document.get(LedgerDefine.REMARK)
-        if (remark != null) transactionDetail!!.remarks = remark as String
-
-        var debitAccount = document.get(LedgerDefine.DEBIT_ACCOUNT_ID)
-        if (debitAccount != null) transactionDetail!!.debitedTo = debitAccount.toString()
-
-        var creditAccount = document.get(LedgerDefine.CREDIT_ACCOUNT_ID)
-        if (creditAccount != null) transactionDetail!!.creditedTo = creditAccount.toString()
-
-        var paymentMode = document.get(LedgerDefine.PAYMENT_MODE)
-        if (paymentMode != null) transactionDetail!!.paymentMode = paymentMode.toString()
-
-        mTransactionAdapter!!.notifyDataSetChanged()
-
-    }
 
     private val SENT: Int = 1
     private val RECEIVED: Int = 2
@@ -756,9 +993,9 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
     private fun getCollection(conditionForUser: Int): Query? {
         mConditionForUser = conditionForUser
         val db = FirestoreDataBase().db
-        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyName()
-        Log.d(TAG, "companyID => $companyID mLastDoc = $mLastDoc")
-        var query: Query = db.collection(LedgerDefine.COMPANIES_SLASH + companyID + "/transactions")
+        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyID()
+        var query: Query =
+            db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_TRANSACTIONS)
 
         if (mTransactionViewType == LedgerDefine.TRANSACTION_VIEW_TYPE_BANK_ACCOUNT) {
 
@@ -790,19 +1027,6 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
                     LedgerDefine.RECEIVER_ID,
                     mID
                 )
-            } else {
-                if (mUserDesignation == LedgerDefine.DESIGNATION_NORMAL) {
-                    query = query.whereEqualTo(
-                        LedgerDefine.RECEIVER_ID,
-                        mID
-                    )
-                } else {
-                    query = query.whereEqualTo(
-                        LedgerDefine.SENDER_ID,
-                        mID
-                    )
-                }
-
             }
         } else if (mTransactionViewType == LedgerDefine.TRANSACTION_VIEW_TYPE_ALL) {
             //
@@ -824,14 +1048,20 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun getAccounts() {
         val db = FirestoreDataBase().db
-        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyName()
+        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyID()
         db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_BANK_ACCOUNTS)
             .get()
             .addOnCompleteListener(OnCompleteListener<QuerySnapshot> { task ->
                 if (task.isSuccessful) {
                     for (document in task.result!!) {
-                        Log.d(TAG, document.id + " => " + document.data)
-                        mBankAccountsMap.put(document.id.toString(), document.get(LedgerDefine.PAYEE_NAME).toString())
+                        val id = document.id.toString()
+                        mBankAccountsMap[id] =
+                            document.get(LedgerDefine.PAYEE_NAME).toString()
+
+                        if (mTransactionViewType == LedgerDefine.TRANSACTION_VIEW_TYPE_BANK_ACCOUNT && id == mID) {
+                            supportActionBar!!.subtitle =
+                                document.get(LedgerDefine.PAYEE_NAME).toString()
+                        }
                     }
                 } else {
                     Log.d(TAG, "Error getting documents: ", task.exception)
@@ -842,14 +1072,22 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun getUsers() {
         val db = FirestoreDataBase().db
-        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyName()
-        db.collection(LedgerDefine.COMPANIES_SLASH + companyID + "/users")
+        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyID()
+        db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_USERS)
             .get()
             .addOnCompleteListener(OnCompleteListener<QuerySnapshot> { task ->
                 if (task.isSuccessful) {
                     for (document in task.result!!) {
                         Log.d(TAG, document.id + " => " + document.data)
-                        mUsersMap.put(document.id.toString(), document.get(LedgerDefine.NAME).toString())
+                        val id = document.id.toString()
+                        mUsersMap[id] =
+                            document.get(LedgerDefine.NAME).toString()
+                        if (mTransactionViewType == LedgerDefine.TRANSACTION_VIEW_TYPE_USER && id == mID!!.substring(
+                                2
+                            )
+                        ) {
+                            supportActionBar!!.subtitle = document.get(LedgerDefine.NAME).toString()
+                        }
                     }
                 } else {
                     Log.d(TAG, "Error getting documents: ", task.exception)
@@ -858,15 +1096,19 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
             })
     }
 
+    private var tempToast:Toast? =null
     private fun toast(id: Int) {
-        Toast.makeText(mContext, id, Toast.LENGTH_LONG).show()
+
+        if(tempToast != null ) tempToast!!.cancel()
+        tempToast = Toast.makeText(mContext, id, Toast.LENGTH_SHORT)
+        tempToast!!.show()
     }
 
     private fun setSetTransaction(document: QueryDocumentSnapshot?) {
         if (document != null) {
             val transactionID = document.get(LedgerDefine.TRANSACTION_ID).toString()
 
-            for (details in mTransactionList) {
+            for (details in mMasterTransactionList) {
                 if (details.transactionID == transactionID) return
             }
             var transactionDetail: TransactionDetails = TransactionDetails()
@@ -875,8 +1117,19 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
             transactionDetail.amount = document.get(LedgerDefine.AMOUNT) as Long
             var projectID = document.get(LedgerDefine.PROJECT_ID)
             if (projectID != null) transactionDetail.projectId = projectID as String
-            transactionDetail.transactionDate = document.get(LedgerDefine.TRANSACTION_DATE) as String
-            transactionDetail.timeStamp = document.get(LedgerDefine.TIME_STAMP) as Date
+            transactionDetail.transactionDate =
+                document.get(LedgerDefine.TRANSACTION_DATE) as String
+
+            var timestamp = document.get(LedgerDefine.TIME_STAMP)
+            if (timestamp != null) {
+                try {
+                    timestamp = timestamp as String
+                } catch (e: java.lang.ClassCastException) {
+                    timestamp = (timestamp as Date).toString()
+                }
+            }
+
+            transactionDetail.timeStamp = timestamp.toString()
             transactionDetail.transactionID = transactionID
             transactionDetail.transactionType = document.get(LedgerDefine.TRANSACTION_TYPE) as Long
             transactionDetail.loggedInID = document.get(LedgerDefine.LOGGED_IN_ID) as String
@@ -894,6 +1147,36 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
             var paymentMode = document.get(LedgerDefine.PAYMENT_MODE)
             if (paymentMode != null) transactionDetail.paymentMode = paymentMode.toString()
 
+            mMasterTransactionList.add(transactionDetail)
+
+            addToTempList(transactionDetail)
+
+        }
+    }
+
+    private fun addToTempList(transactionDetail: TransactionDetails) {
+        if (isFilterOn) {
+            val isNeedToAddSender = mFilterListSender.isEmpty() || mFilterListSender.contains(
+                transactionDetail.senderId.substring(
+                    2
+                )
+            )
+
+
+            var isNeedToAddReceiver = mFilterListReceiver.isEmpty() || mFilterListReceiver.contains(
+                transactionDetail.receiverId.substring(
+                    2
+                )
+            )
+
+            var isNeedToAddWork = mFilterListWork.isEmpty() || mFilterListWork.contains(
+                transactionDetail.projectId
+            )
+
+            if (isNeedToAddSender && isNeedToAddReceiver && isNeedToAddWork) mTransactionList.add(
+                transactionDetail
+            )
+        } else {
             mTransactionList.add(transactionDetail)
         }
     }
@@ -903,6 +1186,56 @@ class TransactionViewActivity : AppCompatActivity(), View.OnClickListener {
 
         return data as String
 
+    }
+
+    override fun onCheckedChanged(checkBox: CompoundButton?, isChecked: Boolean) {
+
+    }
+
+    public fun setFilter() {
+        isFilterOn = true
+        mTransactionList.clear()
+
+        for (transactionDetail in mMasterTransactionList) {
+
+
+            val isNeedToAddSender = mFilterListSender.isEmpty() || mFilterListSender.contains(
+                transactionDetail.senderId.substring(
+                    2
+                )
+            )
+
+
+            var isNeedToAddReceiver = mFilterListReceiver.isEmpty() || mFilterListReceiver.contains(
+                transactionDetail.receiverId.substring(
+                    2
+                )
+            )
+
+            var isNeedToAddWork = mFilterListWork.isEmpty() || mFilterListWork.contains(
+                transactionDetail.projectId
+            )
+
+            if (isNeedToAddSender && isNeedToAddReceiver && isNeedToAddWork) mTransactionList.add(
+                transactionDetail
+            )
+
+        }
+        setAdapter()
+
+        if (mTransactionList.size < LIMIT)
+            getTransactions(mConditionForUser)
+
+    }
+
+    override fun onItemLongClick(
+        parent: AdapterView<*>?,
+        view: View?,
+        position: Int,
+        id: Long
+    ): Boolean {
+        setNormalMenu(false)
+        return true
     }
 }
 

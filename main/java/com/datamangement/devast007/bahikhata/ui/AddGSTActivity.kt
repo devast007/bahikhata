@@ -2,6 +2,7 @@ package com.datamangement.devast007.bahikhata.ui
 
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.support.design.widget.Snackbar
@@ -48,7 +49,16 @@ class AddGSTActivity : AppCompatActivity(), View.OnClickListener {
 
     private var mEditType: Int = -1
 
-    private val MATERIALS: Array<String> = arrayOf("SAND(BALU)", "GITTI", "CEMENT", "ROD(CHHAD)", "DEISEL")
+    private val MATERIALS: Array<String> = arrayOf(
+        "SAND(BALU)",
+        "GITTI(METAL)",
+        "CEMENT",
+        "ROD(CHHAD)",
+        "DIESEL",
+        "BENTONITE POWDER",
+        "BITUMINOUS",
+        "GSB"
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,6 +68,7 @@ class AddGSTActivity : AppCompatActivity(), View.OnClickListener {
         setSupportActionBar(toolbar)
         tv_project_id.setOnClickListener(this)
         tv_sender_id.setOnClickListener(this)
+        tv_receiver_id.setOnClickListener(this)
         btn_save.setOnClickListener(this)
 
 
@@ -82,7 +93,6 @@ class AddGSTActivity : AppCompatActivity(), View.OnClickListener {
         )
         auto_tv_material.threshold = 1
         auto_tv_material.setAdapter(adapter)
-        Log.d(TAG, "setDataForMaterialType")
         auto_tv_material.onFocusChangeListener =
             View.OnFocusChangeListener { v, hasFocus -> if (hasFocus) auto_tv_material.showDropDown() }
     }
@@ -145,11 +155,12 @@ class AddGSTActivity : AppCompatActivity(), View.OnClickListener {
     private fun setDataToUpdate() {
         mGSTIdToUpdate = intent.getStringExtra(LedgerDefine.GST_ID)
         var material = intent.getStringExtra(LedgerDefine.MATERIAL)
-        var billAmount = intent.getStringExtra(LedgerDefine.BILL_AMOUNT)
-        var gstAmount = intent.getStringExtra(LedgerDefine.GST_AMOUNT)
-        var gstPercentage = intent.getStringExtra(LedgerDefine.GST_PERCENTAGE)
+        var billAmount = intent.getStringExtra(LedgerDefine.GST_BILL_AMOUNT)
+        var gstAmount = intent.getStringExtra(LedgerDefine.GST_TAX_AMOUNT)
+        var gstPercentage = intent.getStringExtra(LedgerDefine.GST_TAX_PERCENTAGE)
         var projectID = intent.getStringExtra(LedgerDefine.PROJECT_ID)
         var senderId = intent.getStringExtra(LedgerDefine.SENDER_ID)
+        var receiverId = intent.getStringExtra(LedgerDefine.RECEIVER_ID)
         var remarks = intent.getStringExtra(LedgerDefine.REMARK)
         var date = intent.getStringExtra(LedgerDefine.DATE)
 
@@ -167,6 +178,7 @@ class AddGSTActivity : AppCompatActivity(), View.OnClickListener {
         mSelectedSender!!.userID = senderId
         mSenderIdToUpdate = senderId
         tv_sender_id.text = senderId
+        tv_receiver_id.text = receiverId
 
         et_remarks.setText(remarks)
 
@@ -196,6 +208,7 @@ class AddGSTActivity : AppCompatActivity(), View.OnClickListener {
         when (view!!.id) {
             R.id.tv_project_id -> openDialog(LedgerDefine.SELECTION_TYPE_PROJECT)
             R.id.tv_sender_id -> openDialog(LedgerDefine.SELECTION_TYPE_SENDER)
+            R.id.tv_receiver_id -> openDialog(LedgerDefine.SELECTION_TYPE_RECEIVER)
             R.id.btn_save -> saveBtnClicked()
         }
     }
@@ -207,6 +220,9 @@ class AddGSTActivity : AppCompatActivity(), View.OnClickListener {
         var gstAmount = et_gst_amount.text.toString()
         var gstPercentage = et_gst_percentage.text.toString()
         var remarks = et_remarks.text.toString()
+
+        val senderID = LedgerUtils.getUserAccount(tv_sender_id.text.toString())
+        val receiverID = LedgerUtils.getUserAccount(tv_receiver_id.text.toString())
 
 
         if (isEmpty(material)) {
@@ -229,8 +245,13 @@ class AddGSTActivity : AppCompatActivity(), View.OnClickListener {
             return
         }
 
-        if (mSelectedSender == null) {
+        if (senderID == null) {
             toast(R.string.sender_name_is_empty)
+            return
+        }
+
+        if (receiverID == null) {
+            toast(R.string.receiver_name_is_empty)
             return
         }
 
@@ -242,15 +263,7 @@ class AddGSTActivity : AppCompatActivity(), View.OnClickListener {
         var gstMap: HashMap<String, Any> = HashMap<String, Any>()
 
         // loginId
-        var loggedInID: String? = null
-        if (mSignInProfile!!.isAdmin) {
-            loggedInID = mSignInProfile!!.adminID
-        } else if (mSignInProfile!!.isSupervisor) {
-            loggedInID = mSignInProfile!!.supervisorID
-        } else {
-            toast(R.string.error_07)
-            return
-        }
+        var loggedInID = mSignInProfile!!.userID
 
         gstMap[LedgerDefine.LOGGED_IN_ID] = loggedInID
 
@@ -259,21 +272,23 @@ class AddGSTActivity : AppCompatActivity(), View.OnClickListener {
         gstMap[LedgerDefine.MATERIAL] = material
 
         // rate
-        gstMap[LedgerDefine.BILL_AMOUNT] = billAmount
+        gstMap[LedgerDefine.GST_BILL_AMOUNT] = billAmount
 
         // quantity
-        gstMap[LedgerDefine.GST_AMOUNT] = gstAmount
+        gstMap[LedgerDefine.GST_TAX_AMOUNT] = gstAmount
 
         // amount
-        gstMap[LedgerDefine.GST_PERCENTAGE] = gstPercentage
+        gstMap[LedgerDefine.GST_TAX_PERCENTAGE] = gstPercentage
 
 
         //project
         gstMap[LedgerDefine.PROJECT_ID] = mSelectedProject!!.projectID
 
         //sender
-        gstMap[LedgerDefine.SENDER_ID] = mSelectedSender!!.userID
+        gstMap[LedgerDefine.SENDER_ID] = senderID
 
+        //receiver
+        gstMap[LedgerDefine.RECEIVER_ID] = receiverID
 
         //  date
         gstMap[LedgerDefine.DATE] = date!!
@@ -296,15 +311,14 @@ class AddGSTActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun updateGSTData(transactionMap: HashMap<String, Any>) {
         val db = FirebaseFirestore.getInstance()
-        val companyName = LedgerSharePrefManger(mContext).getCompanyName()
+        val companyName = LedgerSharePrefManger(mContext).getCompanyID()
         btn_save.isEnabled = false
         btn_save.setTextColor(Color.YELLOW)
         btn_save.setText(R.string.saving)
-        var docRef = db.collection(LedgerDefine.COMPANIES_SLASH + companyName + LedgerDefine.SLASH_MATERIALS)
+        var docRef = db.collection(LedgerDefine.COMPANIES_SLASH + companyName + LedgerDefine.SLASH_GST)
             .document(mGSTIdToUpdate!!)
         docRef.update(transactionMap)
             .addOnSuccessListener(OnSuccessListener<Void> {
-                Log.d(TAG, "DocumentSnapshot successfully written!")
                 btn_save.setTextColor(Color.parseColor("#FF7C7B7B"))
                 btn_save.setText(R.string.update_done)
 
@@ -320,7 +334,7 @@ class AddGSTActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun saveDataToFireStore(gstMap: HashMap<String, Any>) {
         val db = FirebaseFirestore.getInstance()
-        val companyName = LedgerSharePrefManger(mContext).getCompanyName()
+        val companyName = LedgerSharePrefManger(mContext).getCompanyID()
         btn_save.isEnabled = false
         btn_save.setTextColor(Color.YELLOW)
         btn_save.setText(R.string.saving)
@@ -328,9 +342,9 @@ class AddGSTActivity : AppCompatActivity(), View.OnClickListener {
         gstMap[LedgerDefine.GST_ID] = docRef.id
         docRef.set(gstMap)
             .addOnSuccessListener(OnSuccessListener<Void> {
-                Log.d(TAG, "DocumentSnapshot successfully written!")
                 btn_save.setTextColor(Color.parseColor("#FF7C7B7B"))
                 btn_save.setText(R.string.saved)
+                updateGstAmountForUser(gstMap[LedgerDefine.SENDER_ID], gstMap[LedgerDefine.GST_BILL_AMOUNT])
                 showSnackBar()
 
             })
@@ -339,6 +353,42 @@ class AddGSTActivity : AppCompatActivity(), View.OnClickListener {
                 toast(R.string.error_09)
                 btn_save.setTextColor(Color.RED)
                 btn_save.setText(R.string.failed)
+            })
+
+    }
+
+    /*override fun onBackPressed() {
+        val intent = Intent(this, GoogleSigninActivity::class.java)
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+        startActivity(intent)
+        finish()
+    }*/
+
+    private fun updateGstAmountForUser(userID: Any?, gstAmount: Any?) {
+        var id = userID.toString().substring(2)
+
+        var basicAmount: Long = 0
+        for (user in mSenderList!!) {
+            if (id == user.userID) {
+                if (user.p_gstBill != null) {
+                    basicAmount = user.p_gstBill
+                }
+                break
+            }
+        }
+        val amount = gstAmount.toString().toLong() + basicAmount
+
+        val db = FirebaseFirestore.getInstance()
+        val companyName = LedgerSharePrefManger(mContext).getCompanyID()
+        var docRef = db.collection(LedgerDefine.COMPANIES_SLASH + companyName + LedgerDefine.SLASH_USERS)
+            .document(id)
+        docRef.update(LedgerDefine.P_GST_BILL, amount)
+            .addOnSuccessListener(OnSuccessListener<Void> {
+                toast(R.string.gst_updated_for_user)
+            })
+            .addOnFailureListener(OnFailureListener { e ->
+                Log.w(TAG, "Error writing document", e)
+                toast(R.string.error_09)
             })
 
     }
@@ -416,7 +466,7 @@ class AddGSTActivity : AppCompatActivity(), View.OnClickListener {
     private fun getProjectList() {
         var db = FirestoreDataBase().db
 
-        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyName()
+        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyID()
 
         db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_PROJECTS)
             .get()
@@ -435,9 +485,9 @@ class AddGSTActivity : AppCompatActivity(), View.OnClickListener {
 
         var db = FirestoreDataBase().db
 
-        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyName()
+        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyID()
 
-        db.collection(LedgerDefine.COMPANIES_SLASH + companyID + "/users")
+        db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_USERS)
             .get()
             .addOnCompleteListener(OnCompleteListener<QuerySnapshot> { task ->
                 if (task.isSuccessful) {
@@ -454,15 +504,14 @@ class AddGSTActivity : AppCompatActivity(), View.OnClickListener {
             finish()
             return false
         }
-        val isAdmin = mSignInProfile!!.isAdmin
+      /*  val isAdmin = mSignInProfile!!.isAdmin
         val isSuperVisor = mSignInProfile!!.isSupervisor
         val isNormalUser = mSignInProfile!!.isNormal
-        val accessedProjects = mSignInProfile!!.accesibleProjects
+        val accessedProjects = mSignInProfile!!.accesibleProjects*/
 
 
         for (document in task.result!!) {
             Log.d(TAG, document.id + " => " + document.data)
-            Log.d(TAG, " document.get(\"name\")+ => " + document.get("name"))
             // senderList
 
             val tempName = document.get(LedgerDefine.NAME)
@@ -470,39 +519,45 @@ class AddGSTActivity : AppCompatActivity(), View.OnClickListener {
             val tempDesignation = document.get(LedgerDefine.DESIGNATION)
             val tempIsAdmin = document.get(LedgerDefine.IS_ADMIN)
             val tempAccessedProjects = document.get(LedgerDefine.ACCESSIBLE_PROJECTS)
-
+            val userAccounts = document.get(LedgerDefine.ACCOUNTS)
+            val personalGstBillAmount = document.get(LedgerDefine.P_GST_BILL)
             val userDetails = UserDetails()
 
             if (tempName != null) userDetails.name = tempName as String
 
-            if (tempId != null) userDetails.userID = tempId as String
-
+            if (tempId != null) userDetails.userID = (tempId as Long).toString()
             if (tempDesignation != null) userDetails.designation = tempDesignation as Long
 
             if (tempIsAdmin != null) {
                 if (tempIsAdmin as Boolean) userDetails.designation = LedgerDefine.DESIGNATION_ADMIN
             }
 
+            if (personalGstBillAmount != null) {
+                userDetails.p_gstBill = personalGstBillAmount as Long
+            }
             if (tempAccessedProjects != null) {
                 userDetails.accesibleProjectsList = tempAccessedProjects as ArrayList<String>
             }
-
-            if (isAdmin) {
-                if (mEditType === LedgerDefine.TRANSACTION_EDIT_TYPE_MODIFY) {
-                    if (tempId == mSenderIdToUpdate) {
-                        mSelectedSender = userDetails
-                        tv_sender_id.text = userDetails.userID + "\n" + userDetails.name
-                    }
-                }
-                mSenderList!!.add(userDetails)
-
-            } else if (isSuperVisor) {
-                addToReceiverList(userDetails, accessedProjects!!)
+            if (userAccounts != null) {
+                userDetails.userAccounts = userAccounts as ArrayList<String>
             }
+            // if (isAdmin) {
+            if (mEditType === LedgerDefine.TRANSACTION_EDIT_TYPE_MODIFY) {
+                if (tempId == mSenderIdToUpdate) {
+                    mSelectedSender = userDetails
+                    tv_sender_id.text = userDetails.userID + "\n" + userDetails.name
+                }
+            }
+            mSenderList!!.add(userDetails)
+            mReceiverList!!.add(userDetails)
+
+            /*} else if (isSuperVisor) {
+                addToReceiverList(userDetails, accessedProjects!!)
+            }*/
         }
-        if (isSuperVisor) {
+        /*if (isSuperVisor) {
             val senderData = UserDetails()
-            senderData.userID = mSignInProfile!!.supervisorID
+            senderData.userID = mSignInProfile!!.userID
             senderData.name = mSignInProfile!!.name
             senderData.designation = LedgerDefine.DESIGNATION_SUPERVISOR
             mSenderList!!.add(senderData)
@@ -515,12 +570,12 @@ class AddGSTActivity : AppCompatActivity(), View.OnClickListener {
                 projectDetails.projectID = id
                 mProjectList!!.add(projectDetails)
             }
-        }
+        }*/
         // ReceiverList
         return true
     }
 
-    private fun addToReceiverList(userDetail: UserDetails, projectAccess: ArrayList<String>) {
+    /*private fun addToReceiverList(userDetail: UserDetails, projectAccess: ArrayList<String>) {
 
         if (userDetail.accesibleProjectsList != null) {
             for (projectID in projectAccess) {
@@ -534,7 +589,7 @@ class AddGSTActivity : AppCompatActivity(), View.OnClickListener {
             }
 
         }
-    }
+    }*/
 
     var mSenderList: ArrayList<UserDetails>? = ArrayList<UserDetails>()
     var mReceiverList: ArrayList<UserDetails>? = ArrayList<UserDetails>()

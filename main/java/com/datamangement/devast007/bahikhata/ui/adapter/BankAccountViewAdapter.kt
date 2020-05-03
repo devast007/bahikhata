@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseExpandableListAdapter
+import android.widget.ImageView
 import android.widget.TextView
 import com.datamangement.devast007.bahikhata.R
 import com.datamangement.devast007.bahikhata.ui.BankAccountViewActivity
@@ -62,7 +63,13 @@ class BankAccountViewAdapter(
         return true
     }
 
-    override fun getChildView(pos: Int, p1: Int, p2: Boolean, convertView: View?, parent: ViewGroup?): View? {
+    override fun getChildView(
+        pos: Int,
+        p1: Int,
+        p2: Boolean,
+        convertView: View?,
+        parent: ViewGroup?
+    ): View? {
         var view: View? = convertView
         var childHolder: ChildHolder? = null
         if (view == null) {
@@ -101,7 +108,12 @@ class BankAccountViewAdapter(
         return groupID
     }
 
-    override fun getGroupView(pos: Int, p1: Boolean, convertView: View?, parent: ViewGroup?): View? {
+    override fun getGroupView(
+        pos: Int,
+        p1: Boolean,
+        convertView: View?,
+        parent: ViewGroup?
+    ): View? {
         var view: View? = convertView
         var groupHolder: GroupHolder? = null
         if (view == null) {
@@ -113,12 +125,14 @@ class BankAccountViewAdapter(
         }
 
         val accountDetails: BankAccountDetail = mAccountsList[pos]
-        groupHolder!!.tvPayee.text = accountDetails.payee
+        groupHolder!!.tvPayee.text = accountDetails.payee + "[" + accountDetails.id + "]"
         groupHolder!!.tvAccountNo.text = accountDetails.accountNo
         groupHolder!!.tvAccountAmount.text = LedgerUtils.getRupeesFormatted(accountDetails.amount)
         groupHolder!!.tvIFSCCode.text = accountDetails.ifscCode
 
+        groupHolder!!.ivShare.setTag(R.string.tag_position, pos)
         groupHolder!!.tvAccountAmount.setTag(R.string.tag_account_id, accountDetails.id)
+        groupHolder!!.ivShare.setOnClickListener(mbankAccountViewActivity)
         groupHolder!!.tvAccountAmount.setOnClickListener(mbankAccountViewActivity)
         return view
     }
@@ -133,6 +147,7 @@ class BankAccountViewAdapter(
         var tvAccountAmount: TextView = view.findViewById<TextView>(R.id.tv_bank_account_amount)
         val tvAccountNo: TextView = view.findViewById<TextView>(R.id.tv_bank_account_number)
         var tvIFSCCode: TextView = view.findViewById<TextView>(R.id.tv_bank_account_ifsc_code)
+        var ivShare: ImageView = view.findViewById<ImageView>(R.id.iv_share_account)
 
     }
 

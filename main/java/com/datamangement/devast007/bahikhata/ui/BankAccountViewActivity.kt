@@ -3,19 +3,21 @@ package com.datamangement.devast007.bahikhata.ui
 import android.Manifest
 import android.app.AlertDialog
 import android.app.ProgressDialog
-import android.content.Context
-import android.content.DialogInterface
-import android.content.Intent
+import android.app.SearchManager
+import android.content.*
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.SearchView
+import android.text.TextUtils
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.AdapterView
 import android.widget.Toast
 import com.datamangement.devast007.bahikhata.R
 import com.datamangement.devast007.bahikhata.excel.BankAccountsExcelSheet
@@ -32,6 +34,9 @@ import kotlinx.android.synthetic.main.activity_bank_account_view.*
 import java.util.*
 
 class BankAccountViewActivity : AppCompatActivity(), View.OnClickListener {
+
+    private val mAccountsList: ArrayList<BankAccountDetail> = ArrayList<BankAccountDetail>()
+    private val mSearchedAccountsList: ArrayList<BankAccountDetail> = ArrayList<BankAccountDetail>()
 
     val TAG = "BankAccountViewActivity"
     var mContext: Context = this
@@ -51,8 +56,52 @@ class BankAccountViewActivity : AppCompatActivity(), View.OnClickListener {
         super.onStart()
     }
 
+    var queryTextListener: SearchView.OnQueryTextListener =
+        object : SearchView.OnQueryTextListener {
+            override fun onQueryTextChange(newText: String): Boolean {
+                matchTextInList(newText)
+                return true
+            }
+
+            override fun onQueryTextSubmit(query: String): Boolean {
+
+                return true
+            }
+        }
+
+    private fun matchTextInList(newText: String) {
+        mSearchedAccountsList.clear()
+        if (!TextUtils.isEmpty(newText)) {
+
+            for (account in mAccountsList) {
+
+                if (account.payee.toLowerCase()
+                        .contains(newText.toLowerCase()) || account.accountNo.contains(
+                        newText
+                    )
+                ) {
+                    mSearchedAccountsList.add(account)
+                }
+            }
+            mAccountAdapter = BankAccountViewAdapter(this, mSearchedAccountsList)
+        } else {
+            mAccountAdapter = BankAccountViewAdapter(this, mAccountsList)
+        }
+        expandable_list_view.setAdapter(mAccountAdapter)
+
+
+    }
+
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.menu_add_button_view, menu)
+        menuInflater.inflate(R.menu.menu_bank_accounts_view, menu)
+
+        val searchItem: MenuItem? = menu?.findItem(R.id.action_search)
+        val searchManager = getSystemService(Context.SEARCH_SERVICE) as SearchManager
+        val searchView: SearchView? = searchItem?.actionView as SearchView
+
+        searchView?.setSearchableInfo(searchManager.getSearchableInfo(componentName))
+        searchView?.setOnQueryTextListener(queryTextListener)
+
         return true
     }
 
@@ -69,8 +118,6 @@ class BankAccountViewActivity : AppCompatActivity(), View.OnClickListener {
     }
 
 
-    private val mAccountsList: ArrayList<BankAccountDetail> = ArrayList<BankAccountDetail>()
-
     private var mAccountAdapter: BankAccountViewAdapter? = null
 
     private fun setAdapter() {
@@ -86,6 +133,7 @@ class BankAccountViewActivity : AppCompatActivity(), View.OnClickListener {
         when (view!!.id) {
             R.id.tv_edit_bank_account_info -> modifyBankAccountInfo(view)
             R.id.tv_bank_account_amount -> launchTransactionViewActivity(view)
+            R.id.iv_share_account -> shareDetails(view)
         }
     }
 
@@ -100,7 +148,10 @@ class BankAccountViewActivity : AppCompatActivity(), View.OnClickListener {
     private fun launchTransactionViewActivity(view: View) {
         val accountID: String = view.getTag(R.string.tag_account_id) as String
         val intent = Intent(mContext, TransactionViewActivity::class.java)
-        intent.putExtra(LedgerDefine.TRANSACTION_VIEW_TYPE, LedgerDefine.TRANSACTION_VIEW_TYPE_BANK_ACCOUNT)
+        intent.putExtra(
+            LedgerDefine.TRANSACTION_VIEW_TYPE,
+            LedgerDefine.TRANSACTION_VIEW_TYPE_BANK_ACCOUNT
+        )
         intent.putExtra(LedgerDefine.ID, accountID)
         startActivity(intent)
     }
@@ -109,18 +160,15 @@ class BankAccountViewActivity : AppCompatActivity(), View.OnClickListener {
 
         mAccountsList.clear()
         val db = FirestoreDataBase().db
-        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyName()
-        Log.d(TAG, "companyID => $companyID")
+        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyID()
         db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_BANK_ACCOUNTS)
             .orderBy(LedgerDefine.PAYEE_NAME, Query.Direction.ASCENDING).get()
             .addOnCompleteListener(OnCompleteListener<QuerySnapshot> { task ->
                 if (task.isSuccessful) {
                     for (document in task.result!!) {
-                        Log.d(TAG, document.id + " => " + document.data)
-                        Log.d(TAG, " document.get(\"name\")+ => " + document.get("name"))
                         setSetAccount(document);
                     }
-                    //FirestoreDataBase().updatePayeeNameUppercase(mAccountsList, mContext)
+                    // FirestoreDataBase().setBankAccounts(mAccountsList, mContext)
                     setAdapter()
                 } else {
                     Log.d(TAG, "Error getting documents: ", task.exception)
@@ -138,7 +186,16 @@ class BankAccountViewActivity : AppCompatActivity(), View.OnClickListener {
             accountDetails.accountNo = document.get(LedgerDefine.BANK_ACCOUNT_NUMBER) as String
             accountDetails.ifscCode = document.get(LedgerDefine.IFSC_CODE) as String
             accountDetails.branch = document.get(LedgerDefine.BANK_ACCOUNT_BRANCH_NAME) as String
-            accountDetails.timestamp = (document.get(LedgerDefine.TIME_STAMP) as Date).toString()
+
+            var timestamp = document.get(LedgerDefine.TIME_STAMP)
+            if (timestamp != null) {
+                try {
+                    accountDetails.timestamp = timestamp as String
+                } catch (e: java.lang.ClassCastException) {
+                    accountDetails.timestamp = (timestamp as Date).toString()
+                }
+            }
+
             val amount = document.get(LedgerDefine.AMOUNT)
             if (amount != null) accountDetails.amount = amount as Long
             accountDetails.remarks = document.get(LedgerDefine.REMARK) as String
@@ -152,7 +209,11 @@ class BankAccountViewActivity : AppCompatActivity(), View.OnClickListener {
                 return true
             } else {
 
-                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), 1)
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                    1
+                )
                 return false
             }
         } else { //permission is automatically granted on sdk<23 upon installation
@@ -177,27 +238,34 @@ class BankAccountViewActivity : AppCompatActivity(), View.OnClickListener {
             try {
                 var builder = AlertDialog.Builder(mContext);
                 builder.setMessage("File Is Downloaded...")
-                    .setPositiveButton("OPEN", DialogInterface.OnClickListener { dialogInterface, i ->
-                        val newIntent = Intent(Intent.ACTION_VIEW)
-                        newIntent.setDataAndType(Uri.parse("file://$filepath"), dataType)
-                        newIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    .setPositiveButton(
+                        "OPEN",
+                        DialogInterface.OnClickListener { dialogInterface, i ->
+                            val newIntent = Intent(Intent.ACTION_VIEW)
+                            newIntent.setDataAndType(Uri.parse("file://$filepath"), dataType)
+                            newIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
 
-                        mContext!!.startActivity(newIntent)
-                    })
-                    .setNegativeButton("SHARE", DialogInterface.OnClickListener { dialogInterface, i ->
-                        var intentShareFile = Intent(Intent.ACTION_SEND);
+                            mContext!!.startActivity(newIntent)
+                        })
+                    .setNegativeButton(
+                        "SHARE",
+                        DialogInterface.OnClickListener { dialogInterface, i ->
+                            var intentShareFile = Intent(Intent.ACTION_SEND);
 
-                        intentShareFile.setType(dataType);
-                        intentShareFile.putExtra(Intent.EXTRA_STREAM, Uri.parse("file://$filepath"));
+                            intentShareFile.setType(dataType);
+                            intentShareFile.putExtra(
+                                Intent.EXTRA_STREAM,
+                                Uri.parse("file://$filepath")
+                            );
 
-                        intentShareFile.putExtra(
-                            Intent.EXTRA_SUBJECT,
-                            "Sharing File..."
-                        );
-                        intentShareFile.putExtra(Intent.EXTRA_TEXT, "Sharing File...");
+                            intentShareFile.putExtra(
+                                Intent.EXTRA_SUBJECT,
+                                "Sharing File..."
+                            );
+                            intentShareFile.putExtra(Intent.EXTRA_TEXT, "Sharing File...");
 
-                        startActivity(Intent.createChooser(intentShareFile, "Share File"));
-                    }).show()
+                            startActivity(Intent.createChooser(intentShareFile, "Share File"));
+                        }).show()
             } catch (e: Exception) {
                 toast(R.string.file_not_found)
             }
@@ -206,5 +274,27 @@ class BankAccountViewActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun toast(id: Int) {
         Toast.makeText(mContext, id, Toast.LENGTH_LONG).show()
+    }
+
+    fun shareDetails(view: View) {
+        val position = view.getTag(R.string.tag_position) as Int
+        var accountDetails: BankAccountDetail? = null
+        if (mSearchedAccountsList.size != 0) {
+            accountDetails = mSearchedAccountsList[position]
+        } else {
+            accountDetails = mAccountsList[position]
+        }
+        val accountInfo = accountDetails.payee + "\n" + accountDetails.accountNo + "\n" +
+                accountDetails.ifscCode + "\n" + accountDetails.branch
+
+        val sharingIntent = Intent(Intent.ACTION_SEND)
+        sharingIntent.type = "text/plain"
+        sharingIntent.putExtra(Intent.EXTRA_TEXT, accountInfo)
+        startActivity(
+            Intent.createChooser(
+                sharingIntent,
+                resources.getString(R.string.share_using)
+            )
+        )
     }
 }

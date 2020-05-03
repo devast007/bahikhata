@@ -11,6 +11,11 @@ class SignInProfile() {
         set(value) {
             field = value
         }
+    var isHasLimitedAccess: Boolean = false
+        get() = field
+        set(value) {
+            field = value
+        }
     var isNormal: Boolean = false
         get() = field
         set(value) {
@@ -21,17 +26,7 @@ class SignInProfile() {
         set(value) {
             field = value
         }
-    var adminID: String = ""
-        get() = field
-        set(value) {
-            field = value
-        }
-    var supervisorID: String = ""
-        get() = field
-        set(value) {
-            field = value
-        }
-    var normalId: String = ""
+    var userID: String = ""
         get() = field
         set(value) {
             field = value
@@ -64,6 +59,12 @@ class SignInProfile() {
             field = value
         }
     var accesibleProjects: ArrayList<String>? = null
+        get() = field
+        set(value) {
+            field = value
+        }
+
+    var userAccounts: ArrayList<String>? = null
         get() = field
         set(value) {
             field = value

@@ -7,28 +7,26 @@ import android.content.*
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.support.design.widget.Snackbar
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.LocalBroadcastManager
-import android.support.v7.app.AppCompatActivity
 import android.text.TextUtils
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.AbsListView
-import android.widget.AbsListView.OnScrollListener
-import android.widget.AbsListView.OnScrollListener.SCROLL_STATE_IDLE
 import android.widget.Toast
 import com.datamangement.devast007.bahikhata.R
-import com.datamangement.devast007.bahikhata.excel.MaterialsExcelSheet
+import com.datamangement.devast007.bahikhata.excel.GstExcelSheet
 import com.datamangement.devast007.bahikhata.firestore.FirestoreDataBase
-import com.datamangement.devast007.bahikhata.ui.adapter.MaterialViewAdapter
+import com.datamangement.devast007.bahikhata.ui.adapter.GstViewAdapter
 import com.datamangement.devast007.bahikhata.ui.fragment.DialogFragmentMoreInfo
+import com.datamangement.devast007.bahikhata.utils.GstDetails
 import com.datamangement.devast007.bahikhata.utils.LedgerDefine
 import com.datamangement.devast007.bahikhata.utils.LedgerSharePrefManger
-import com.datamangement.devast007.bahikhata.utils.MaterialDetails
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.Query
@@ -38,8 +36,7 @@ import kotlinx.android.synthetic.main.activity_transaction_view.*
 import java.util.*
 import kotlin.collections.ArrayList
 
-
-class MaterialViewActivity : AppCompatActivity(), View.OnClickListener {
+class GstViewActivity : AppCompatActivity() , View.OnClickListener{
 
     var mContext: Context? = null
     val TAG = "MaterialViewActivity"
@@ -47,21 +44,18 @@ class MaterialViewActivity : AppCompatActivity(), View.OnClickListener {
     var mUsersMap: HashMap<String, String> = HashMap<String, String>()
     val mProjectsMap: HashMap<String, String> = HashMap<String, String>()
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_materials_view)
+        setContentView(R.layout.activity_gst_view)
         mContext = this
-        supportActionBar!!.setTitle(R.string.material)
+        supportActionBar!!.setTitle(R.string.gst)
         val intent = intent
         mID = intent.getStringExtra(LedgerDefine.ID)
 
         supportActionBar!!.subtitle = mID
         getUsers()
-        getProjects()
-        getMaterials(-1)
+        getGstData(-1)
     }
-
 
 
     private fun getUsers() {
@@ -140,22 +134,21 @@ class MaterialViewActivity : AppCompatActivity(), View.OnClickListener {
                 if (task.isSuccessful) {
                     var queryDocs = task.result!!
                     for (doc: QueryDocumentSnapshot in queryDocs) {
-                        Log.d(TAG, doc.id + " => " + doc.data)
-                        setMaterials(doc)
+                        setGstDetails(doc)
                     }
                     registerLocalBroadcastReceiver()
                     // test-1 starts
                     if (isEmpty(mID)) {
                         mID = "ALL"
                     }
-                    MaterialsExcelSheet(mContext, mID, mMaterialsList).writeToSheet()
+                    GstExcelSheet(mContext, mID, mGstLists).writeToSheet()
 
                     // test-1 ends
                     if (expandable_list_view.count <= 0) {
                         setAdapter()
                     } else {
-                        if (mMaterialAdapter != null) {
-                            mMaterialAdapter!!.notifyDataSetChanged()
+                        if (mGstAdapter != null) {
+                            mGstAdapter!!.notifyDataSetChanged()
                             expandable_list_view.requestLayout()
                         }
                     }
@@ -223,7 +216,7 @@ class MaterialViewActivity : AppCompatActivity(), View.OnClickListener {
 
         when (item!!.itemId) {
             R.id.action_add -> {
-                startActivity(Intent(this, AddMaterialActivity::class.java));
+                startActivity(Intent(this, AddGSTActivity::class.java));
                 return true
             }
             R.id.action_excel_file -> createExcelSheet()
@@ -233,19 +226,19 @@ class MaterialViewActivity : AppCompatActivity(), View.OnClickListener {
     }
 
 
-    private var mMaterialAdapter: MaterialViewAdapter? = null
+    private var mGstAdapter: GstViewAdapter? = null
 
-    private var mMaterialsList: ArrayList<MaterialDetails> = ArrayList()
+    private var mGstLists: ArrayList<GstDetails> = ArrayList()
 
-    var mScrollListener: OnScrollListener = object : OnScrollListener {
+    var mScrollListener: AbsListView.OnScrollListener = object : AbsListView.OnScrollListener {
 
         override fun onScrollStateChanged(view: AbsListView, scrollState: Int) {
 
 
-            if (scrollState === SCROLL_STATE_IDLE) {
+            if (scrollState === AbsListView.OnScrollListener.SCROLL_STATE_IDLE) {
                 val count = expandable_list_view.count
                 if (expandable_list_view.lastVisiblePosition >= count - 1) {
-                    getMaterials(mConditionForUser)
+                    getGstData(mConditionForUser)
                 }
             }
 
@@ -260,10 +253,10 @@ class MaterialViewActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     private fun setAdapter() {
-        if (mMaterialAdapter == null) {
-            mMaterialAdapter = MaterialViewAdapter(this, mMaterialsList)
+        if (mGstAdapter == null) {
+            mGstAdapter = GstViewAdapter(this, mGstLists)
         }
-        expandable_list_view.setAdapter(mMaterialAdapter)
+        expandable_list_view.setAdapter(mGstAdapter)
         expandable_list_view.setOnScrollListener(mScrollListener)
     }
 
@@ -273,25 +266,25 @@ class MaterialViewActivity : AppCompatActivity(), View.OnClickListener {
             R.id.tv_receiver_id,
             R.id.tv_log_in_id -> viewUserInfo(view)
             R.id.tv_project_id -> viewProjectInfo(view)
-            R.id.tv_edit_material -> editTransaction(view)
+            R.id.tv_edit_gst -> editTransaction(view)
         }
     }
 
     private fun editTransaction(view: View) {
-        val transactionID = view.getTag(R.string.tag_material_id).toString()
-        for (list in mMaterialsList) {
-            if (transactionID == list.materialID) {
-                var intent = Intent(mContext, AddMaterialActivity::class.java)
+        val transactionID = view.getTag(R.string.tag_gst_id).toString()
+        for (list in mGstLists) {
+            if (transactionID == list.gstId) {
+                var intent = Intent(mContext, AddGSTActivity::class.java)
                 intent.putExtra(LedgerDefine.TRANSACTION_EDIT_TYPE, LedgerDefine.TRANSACTION_EDIT_TYPE_MODIFY)
-                intent.putExtra(LedgerDefine.MATERIAL_ID, list.materialID)
+                intent.putExtra(LedgerDefine.GST_ID, list.gstId)
 
                 intent.putExtra(LedgerDefine.MATERIAL, list.material)
-                intent.putExtra(LedgerDefine.RATE, list.rate)
-                intent.putExtra(LedgerDefine.QUANTITY, list.quantity)
-                intent.putExtra(LedgerDefine.AMOUNT, "" + list.amount)
+                intent.putExtra(LedgerDefine.GST_TAX_AMOUNT, list.gstTax)
+                intent.putExtra(LedgerDefine.GST_TAX_PERCENTAGE, list.gstTaxPercent)
+                intent.putExtra(LedgerDefine.GST_BILL_AMOUNT, "" + list.billAmount)
 
                 intent.putExtra(LedgerDefine.PROJECT_ID, list.projectId)
-                intent.putExtra(LedgerDefine.SENDER_ID, list.senderId)
+                intent.putExtra(LedgerDefine.SENDER_ID, list.supplierID)
                 intent.putExtra(LedgerDefine.RECEIVER_ID, list.receiverId)
 
                 intent.putExtra(LedgerDefine.REMARK, list.remarks)
@@ -342,10 +335,26 @@ class MaterialViewActivity : AppCompatActivity(), View.OnClickListener {
 
         bundle.putString(LedgerDefine.USER_ID, document!!.get(LedgerDefine.USER_ID).toString())
         bundle.putString(LedgerDefine.NAME, document!!.get(LedgerDefine.NAME).toString())
-        var amount = document!!.get(LedgerDefine.AMOUNT)
-        if (amount != null) {
-            bundle.putLong(LedgerDefine.AMOUNT, amount as Long)
+        var m_amount = document!!.get(LedgerDefine.M_AMOUNT)
+        if (m_amount != null) {
+            bundle.putLong(LedgerDefine.M_AMOUNT, m_amount as Long)
         }
+
+        var p_gst_bill = document!!.get(LedgerDefine.P_GST_BILL)
+        if (p_gst_bill != null) {
+            bundle.putLong(LedgerDefine.P_GST_BILL, p_gst_bill as Long)
+        }
+
+        var p_payment = document!!.get(LedgerDefine.P_PAYMENT)
+        if (p_payment != null) {
+            bundle.putLong(LedgerDefine.P_MATERIAL_COST, p_payment as Long)
+        }
+
+        var p_materialCost = document!!.get(LedgerDefine.P_MATERIAL_COST)
+        if (p_materialCost != null) {
+            bundle.putLong(LedgerDefine.AMOUNT, p_materialCost as Long)
+        }
+
         bundle.putString(LedgerDefine.ADDRESS, document!!.get(LedgerDefine.ADDRESS).toString())
         bundle.putString(LedgerDefine.TIME_STAMP, document!!.get(LedgerDefine.TIME_STAMP).toString())
         bundle.putString(LedgerDefine.PHONE_NUMBER, document!!.get(LedgerDefine.PHONE_NUMBER).toString())
@@ -462,7 +471,7 @@ class MaterialViewActivity : AppCompatActivity(), View.OnClickListener {
 
     private var mIsNoMoreDocs: Boolean = false
 
-    private fun getMaterials(conditionForUser: Int) {
+    private fun getGstData(conditionForUser: Int) {
         if (mIsNoMoreDocs) {
             toast(R.string.loading_finished)
             return
@@ -478,7 +487,7 @@ class MaterialViewActivity : AppCompatActivity(), View.OnClickListener {
                     var queryDocs = task.result!!
                     for (doc: QueryDocumentSnapshot in queryDocs) {
                         Log.d(TAG, doc.id + " => " + doc.data)
-                        setMaterials(doc)
+                        setGstDetails(doc)
                     }
                     if (queryDocs.isEmpty) {
                         mIsNoMoreDocs = true
@@ -489,8 +498,8 @@ class MaterialViewActivity : AppCompatActivity(), View.OnClickListener {
                     if (expandable_list_view.count <= 0) {
                         setAdapter()
                     } else {
-                        if (mMaterialAdapter != null) {
-                            mMaterialAdapter!!.notifyDataSetChanged()
+                        if (mGstAdapter != null) {
+                            mGstAdapter!!.notifyDataSetChanged()
                             expandable_list_view.requestLayout()
                         }
                     }
@@ -503,9 +512,6 @@ class MaterialViewActivity : AppCompatActivity(), View.OnClickListener {
     }
 
 
-    private val SENT: Int = 1
-    private val RECEIVED: Int = 2
-
     private var mLastDoc: DocumentSnapshot? = null
 
     private var mConditionForUser: Int = -1
@@ -517,8 +523,7 @@ class MaterialViewActivity : AppCompatActivity(), View.OnClickListener {
     private fun getCollection(): Query? {
         val db = FirestoreDataBase().db
         val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyID()
-
-        var query: Query = db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_MATERIALS)
+        var query: Query = db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_GST)
 
         if (!TextUtils.isEmpty(mID)) {
             query = query.whereEqualTo(
@@ -546,39 +551,39 @@ class MaterialViewActivity : AppCompatActivity(), View.OnClickListener {
         Toast.makeText(mContext, id, Toast.LENGTH_LONG).show()
     }
 
-    private fun setMaterials(document: QueryDocumentSnapshot?) {
+    private fun setGstDetails(document: QueryDocumentSnapshot?) {
         if (document != null) {
-            val materialID = document.get(LedgerDefine.MATERIAL_ID).toString()
+            val gstID = document.get(LedgerDefine.GST_ID).toString()
 
-            for (details in mMaterialsList) {
-                if (details.materialID == materialID) return
+            for (details in mGstLists) {
+                if (details.gstId == gstID) return
             }
-            var materialsDetails = MaterialDetails()
-            materialsDetails.materialID = materialID
-            materialsDetails.material = document.get(LedgerDefine.MATERIAL) as String
-            materialsDetails.rate = document.get(LedgerDefine.RATE) as String
-            materialsDetails.quantity = document.get(LedgerDefine.QUANTITY) as String
-            materialsDetails.amount = document.get(LedgerDefine.AMOUNT) as String
-            materialsDetails.senderId = document.get(LedgerDefine.SENDER_ID) as String
-            materialsDetails.receiverId = document.get(LedgerDefine.RECEIVER_ID) as String
-            materialsDetails.projectId = document.get(LedgerDefine.PROJECT_ID) as String
-            materialsDetails.date = document.get(LedgerDefine.DATE) as String
+            var gstDetails = GstDetails()
+            gstDetails.gstId = gstID
+            gstDetails.material = document.get(LedgerDefine.MATERIAL) as String
+            gstDetails.billAmount = document.get(LedgerDefine.GST_BILL_AMOUNT) as String
+            gstDetails.gstTax = document.get(LedgerDefine.GST_TAX_AMOUNT) as String
+            gstDetails.gstTaxPercent = document.get(LedgerDefine.GST_TAX_PERCENTAGE) as String
+            gstDetails.supplierID = document.get(LedgerDefine.SENDER_ID) as String
+            gstDetails.receiverId = document.get(LedgerDefine.RECEIVER_ID) as String
+            gstDetails.projectId = document.get(LedgerDefine.PROJECT_ID) as String
+            gstDetails.date = document.get(LedgerDefine.DATE) as String
 
             var timestamp = document.get(LedgerDefine.TIME_STAMP)
             if (timestamp != null) {
                 try {
-                    materialsDetails.timeStamp = timestamp as String
+                    gstDetails.timeStamp = timestamp as String
                 } catch (e: java.lang.ClassCastException) {
-                    materialsDetails.timeStamp = (timestamp as Date).toString()
+                    gstDetails.timeStamp = (timestamp as Date).toString()
                 }
             }
 
-            materialsDetails.loggedInID = document.get(LedgerDefine.LOGGED_IN_ID) as String
+            gstDetails.loggedInID = document.get(LedgerDefine.LOGGED_IN_ID) as String
 
             var remark = document.get(LedgerDefine.REMARK)
-            if (remark != null) materialsDetails.remarks = remark as String
+            if (remark != null) gstDetails.remarks = remark as String
 
-            mMaterialsList.add(materialsDetails)
+            mGstLists.add(gstDetails)
         }
     }
 

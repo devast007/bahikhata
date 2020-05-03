@@ -2,6 +2,7 @@ package com.datamangement.devast007.bahikhata.ui
 
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.support.design.widget.Snackbar
@@ -34,6 +35,8 @@ import kotlin.collections.HashMap
 
 class AddMaterialActivity : AppCompatActivity(), View.OnClickListener {
 
+    private val SENDER_ACCOUNT: Int = 1
+    private val RECEIVER_ACCOUNT: Int = 2
     private val TAG = "AddMaterialActivity"
     private var mContext: Context? = null
     var mSignInProfile: SignInProfile? = null
@@ -47,7 +50,16 @@ class AddMaterialActivity : AppCompatActivity(), View.OnClickListener {
 
     private var mEditType: Int = -1
 
-    private val MATERIALS: Array<String> = arrayOf("SAND(BALU)", "GITTI", "CEMENT", "ROD(CHHAD)", "DEISEL")
+    private val MATERIALS: Array<String> = arrayOf(
+        "SAND(BALU)",
+        "GITTI(METAL)",
+        "CEMENT",
+        "ROD(CHHAD)",
+        "DIESEL",
+        "BENTONITE POWDER",
+        "BITUMINOUS",
+        "GSB"
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -82,7 +94,6 @@ class AddMaterialActivity : AppCompatActivity(), View.OnClickListener {
         )
         auto_tv_material.threshold = 1
         auto_tv_material.setAdapter(adapter)
-        Log.d(TAG, "setDataForMaterialType")
         auto_tv_material.onFocusChangeListener =
             View.OnFocusChangeListener { v, hasFocus -> if (hasFocus) auto_tv_material.showDropDown() }
     }
@@ -209,6 +220,8 @@ class AddMaterialActivity : AppCompatActivity(), View.OnClickListener {
         var quantiy = et_quantity.text.toString()
         var amount = et_amount.text.toString()
         var remarks = et_remarks.text.toString()
+        val senderID = LedgerUtils.getUserAccount(tv_sender_id.text.toString())
+        val receiverID = LedgerUtils.getUserAccount(tv_receiver_id.text.toString())
 
 
         if (isEmpty(material)) {
@@ -236,12 +249,12 @@ class AddMaterialActivity : AppCompatActivity(), View.OnClickListener {
             return
         }
 
-        if (mSelectedSender == null) {
+        if (senderID == null) {
             toast(R.string.sender_name_is_empty)
             return
         }
 
-        if (mSelectedReceiver == null) {
+        if (receiverID == null) {
             toast(R.string.receiver_name_is_empty)
             return
         }
@@ -253,22 +266,18 @@ class AddMaterialActivity : AppCompatActivity(), View.OnClickListener {
             return
         }
 
-        var date: String? = getDateFormatted(et_day.text.toString(), et_month.text.toString(), et_year.text.toString())
+        var date: String? = getDateFormatted(
+            et_day.text.toString(),
+            et_month.text.toString(),
+            et_year.text.toString()
+        )
         // elvis operator if(date == null ) return null
             ?: return
 
         var materialMap: HashMap<String, Any> = HashMap<String, Any>()
 
         // loginId
-        var loggedInID: String? = null
-        if (mSignInProfile!!.isAdmin) {
-            loggedInID = mSignInProfile!!.adminID
-        } else if (mSignInProfile!!.isSupervisor) {
-            loggedInID = mSignInProfile!!.supervisorID
-        } else {
-            toast(R.string.error_07)
-            return
-        }
+        var loggedInID = mSignInProfile!!.userID
 
         materialMap[LedgerDefine.LOGGED_IN_ID] = loggedInID
 
@@ -290,10 +299,11 @@ class AddMaterialActivity : AppCompatActivity(), View.OnClickListener {
         materialMap[LedgerDefine.PROJECT_ID] = mSelectedProject!!.projectID
 
         //sender
-        materialMap[LedgerDefine.SENDER_ID] = mSelectedSender!!.userID
+        materialMap[LedgerDefine.SENDER_ID] = senderID
 
         //receiver
-        materialMap[LedgerDefine.RECEIVER_ID] = mSelectedReceiver!!.userID
+        materialMap[LedgerDefine.RECEIVER_ID] = receiverID
+
 
         //  date
         materialMap[LedgerDefine.DATE] = date!!
@@ -316,15 +326,15 @@ class AddMaterialActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun updateMaterialData(transactionMap: HashMap<String, Any>) {
         val db = FirebaseFirestore.getInstance()
-        val companyName = LedgerSharePrefManger(mContext).getCompanyName()
+        val companyName = LedgerSharePrefManger(mContext).getCompanyID()
         btn_save.isEnabled = false
         btn_save.setTextColor(Color.YELLOW)
         btn_save.setText(R.string.saving)
-        var docRef = db.collection(LedgerDefine.COMPANIES_SLASH + companyName + LedgerDefine.SLASH_MATERIALS)
-            .document(mMaterialIdToUpdate!!)
+        var docRef =
+            db.collection(LedgerDefine.COMPANIES_SLASH + companyName + LedgerDefine.SLASH_MATERIALS)
+                .document(mMaterialIdToUpdate!!)
         docRef.update(transactionMap)
             .addOnSuccessListener(OnSuccessListener<Void> {
-                Log.d(TAG, "DocumentSnapshot successfully written!")
                 btn_save.setTextColor(Color.parseColor("#FF7C7B7B"))
                 btn_save.setText(R.string.update_done)
 
@@ -340,17 +350,22 @@ class AddMaterialActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun saveDataToFireStore(materialMap: HashMap<String, Any>) {
         val db = FirebaseFirestore.getInstance()
-        val companyName = LedgerSharePrefManger(mContext).getCompanyName()
+        val companyName = LedgerSharePrefManger(mContext).getCompanyID()
         btn_save.isEnabled = false
         btn_save.setTextColor(Color.YELLOW)
         btn_save.setText(R.string.saving)
-        var docRef = db.collection(LedgerDefine.COMPANIES_SLASH + companyName + LedgerDefine.SLASH_MATERIALS).document()
+        var docRef =
+            db.collection(LedgerDefine.COMPANIES_SLASH + companyName + LedgerDefine.SLASH_MATERIALS)
+                .document()
         materialMap[LedgerDefine.MATERIAL_ID] = docRef.id
         docRef.set(materialMap)
             .addOnSuccessListener(OnSuccessListener<Void> {
-                Log.d(TAG, "DocumentSnapshot successfully written!")
                 btn_save.setTextColor(Color.parseColor("#FF7C7B7B"))
                 btn_save.setText(R.string.saved)
+                updateMaterialAmountForUser(
+                    materialMap[LedgerDefine.SENDER_ID],
+                    materialMap[LedgerDefine.AMOUNT]
+                )
                 showSnackBar()
 
             })
@@ -361,6 +376,43 @@ class AddMaterialActivity : AppCompatActivity(), View.OnClickListener {
                 btn_save.setText(R.string.failed)
             })
 
+    }
+
+    private fun updateMaterialAmountForUser(userID: Any?, materialCost: Any?) {
+        var id = userID.toString().substring(2)
+
+        var basicAmount: Long = 0
+        for (user in mSenderList!!) {
+            if (id == user.userID) {
+                if (user.p_MaterialCost != null) {
+                    basicAmount = user.p_MaterialCost
+                }
+                break
+            }
+        }
+        val amount = materialCost.toString().toLong() + basicAmount
+
+        val db = FirebaseFirestore.getInstance()
+        val companyName = LedgerSharePrefManger(mContext).getCompanyID()
+        var docRef =
+            db.collection(LedgerDefine.COMPANIES_SLASH + companyName + LedgerDefine.SLASH_USERS)
+                .document(id)
+        docRef.update(LedgerDefine.P_MATERIAL_COST, amount)
+            .addOnSuccessListener(OnSuccessListener<Void> {
+                toast(R.string.material_cost_updated_for_user)
+            })
+            .addOnFailureListener(OnFailureListener { e ->
+                Log.w(TAG, "Error writing document", e)
+                toast(R.string.error_09)
+            })
+
+    }
+
+    override fun onBackPressed() {
+        val intent = Intent(this, GoogleSigninActivity::class.java)
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+        startActivity(intent)
+        finish()
     }
 
     private fun showSnackBar() {
@@ -374,7 +426,8 @@ class AddMaterialActivity : AppCompatActivity(), View.OnClickListener {
         snackbar.setActionTextColor(Color.BLUE)
         val sbView = snackbar.view
         sbView.setBackgroundColor(Color.YELLOW)
-        val textView = sbView.findViewById<View>(android.support.design.R.id.snackbar_text) as TextView
+        val textView =
+            sbView.findViewById<View>(android.support.design.R.id.snackbar_text) as TextView
         textView.setTextColor(Color.BLACK)
         snackbar.show()
     }
@@ -436,7 +489,7 @@ class AddMaterialActivity : AppCompatActivity(), View.OnClickListener {
     private fun getProjectList() {
         var db = FirestoreDataBase().db
 
-        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyName()
+        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyID()
 
         db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_PROJECTS)
             .get()
@@ -455,9 +508,9 @@ class AddMaterialActivity : AppCompatActivity(), View.OnClickListener {
 
         var db = FirestoreDataBase().db
 
-        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyName()
+        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyID()
 
-        db.collection(LedgerDefine.COMPANIES_SLASH + companyID + "/users")
+        db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_USERS)
             .get()
             .addOnCompleteListener(OnCompleteListener<QuerySnapshot> { task ->
                 if (task.isSuccessful) {
@@ -474,10 +527,10 @@ class AddMaterialActivity : AppCompatActivity(), View.OnClickListener {
             finish()
             return false
         }
-        val isAdmin = mSignInProfile!!.isAdmin
-        val isSuperVisor = mSignInProfile!!.isSupervisor
-        val isNormalUser = mSignInProfile!!.isNormal
-        val accessedProjects = mSignInProfile!!.accesibleProjects
+        /* val isAdmin = mSignInProfile!!.isAdmin
+         val isSuperVisor = mSignInProfile!!.isSupervisor
+         val isNormalUser = mSignInProfile!!.isNormal
+         val accessedProjects = mSignInProfile!!.accesibleProjects*/
 
 
         for (document in task.result!!) {
@@ -490,44 +543,52 @@ class AddMaterialActivity : AppCompatActivity(), View.OnClickListener {
             val tempDesignation = document.get(LedgerDefine.DESIGNATION)
             val tempIsAdmin = document.get(LedgerDefine.IS_ADMIN)
             val tempAccessedProjects = document.get(LedgerDefine.ACCESSIBLE_PROJECTS)
-
+            val userAccounts = document.get(LedgerDefine.ACCOUNTS)
+            val materialCost = document.get(LedgerDefine.P_MATERIAL_COST)
             val userDetails = UserDetails()
 
             if (tempName != null) userDetails.name = tempName as String
 
-            if (tempId != null) userDetails.userID = tempId as String
+            if (tempId != null) userDetails.userID = (tempId as Long).toString()
 
             if (tempDesignation != null) userDetails.designation = tempDesignation as Long
+
+            if (materialCost != null) {
+                userDetails.p_MaterialCost = materialCost as Long
+            }
 
             if (tempIsAdmin != null) {
                 if (tempIsAdmin as Boolean) userDetails.designation = LedgerDefine.DESIGNATION_ADMIN
             }
 
+            if (userAccounts != null) {
+                userDetails.userAccounts = userAccounts as ArrayList<String>
+            }
             if (tempAccessedProjects != null) {
                 userDetails.accesibleProjectsList = tempAccessedProjects as ArrayList<String>
             }
 
-            if (isAdmin) {
-                if (mEditType === LedgerDefine.TRANSACTION_EDIT_TYPE_MODIFY) {
-                    if (tempId == mReceiverIdToUpdate) {
-                        mSelectedReceiver = userDetails
+//            if (isAdmin) {
+            if (mEditType === LedgerDefine.TRANSACTION_EDIT_TYPE_MODIFY) {
+                if (tempId == mReceiverIdToUpdate) {
+                    mSelectedReceiver = userDetails
 
-                        tv_receiver_id.text = userDetails.userID + "\n" + userDetails.name
-                    } else if (tempId == mSenderIdToUpdate) {
-                        mSelectedSender = userDetails
-                        tv_sender_id.text = userDetails.userID + "\n" + userDetails.name
-                    }
+                    tv_receiver_id.text = userDetails.userID + "\n" + userDetails.name
+                } else if (tempId == mSenderIdToUpdate) {
+                    mSelectedSender = userDetails
+                    tv_sender_id.text = userDetails.userID + "\n" + userDetails.name
                 }
-                mReceiverList!!.add(userDetails)
-                mSenderList!!.add(userDetails)
-
-            } else if (isSuperVisor) {
-                addToReceiverList(userDetails, accessedProjects!!)
             }
+            mReceiverList!!.add(userDetails)
+            mSenderList!!.add(userDetails)
+
+            /*          } else if (isSuperVisor) {
+                          addToReceiverList(userDetails, accessedProjects!!)
+                      }*/
         }
-        if (isSuperVisor) {
+        /*if (isSuperVisor) {
             val senderData = UserDetails()
-            senderData.userID = mSignInProfile!!.supervisorID
+            senderData.userID = mSignInProfile!!.userID
             senderData.name = mSignInProfile!!.name
             senderData.designation = LedgerDefine.DESIGNATION_SUPERVISOR
             mSenderList!!.add(senderData)
@@ -540,12 +601,12 @@ class AddMaterialActivity : AppCompatActivity(), View.OnClickListener {
                 projectDetails.projectID = id
                 mProjectList!!.add(projectDetails)
             }
-        }
+        }*/
         // ReceiverList
         return true
     }
 
-    private fun addToReceiverList(userDetail: UserDetails, projectAccess: ArrayList<String>) {
+    /*private fun addToReceiverList(userDetail: UserDetails, projectAccess: ArrayList<String>) {
 
         if (userDetail.accesibleProjectsList != null) {
             for (projectID in projectAccess) {
@@ -560,7 +621,7 @@ class AddMaterialActivity : AppCompatActivity(), View.OnClickListener {
 
         }
     }
-
+*/
     var mSenderList: ArrayList<UserDetails>? = ArrayList<UserDetails>()
     var mReceiverList: ArrayList<UserDetails>? = ArrayList<UserDetails>()
     var mBankAccountList: ArrayList<BankAccountDetail>? = ArrayList<BankAccountDetail>()

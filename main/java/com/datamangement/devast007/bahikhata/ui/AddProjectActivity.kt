@@ -1,6 +1,7 @@
 package com.datamangement.devast007.bahikhata.ui
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.support.design.widget.Snackbar
@@ -29,7 +30,7 @@ class AddProjectActivity : AppCompatActivity(), View.OnClickListener {
 
     private lateinit var mCompanyName: String
 
-    private var mProjectID: String? = null
+    private var mProjectIDToUpdate: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,23 +38,24 @@ class AddProjectActivity : AppCompatActivity(), View.OnClickListener {
         setSupportActionBar(toolbar)
 
         val mDB = FirebaseFirestore.getInstance()
-        mCompanyName = LedgerSharePrefManger(mContext).getCompanyName()
+        mCompanyName = LedgerSharePrefManger(mContext).getCompanyID()
         btn_save.setOnClickListener(this)
         mAuth = FirebaseAuth.getInstance()
-        mProjectID = intent.getStringExtra(LedgerDefine.PROJECT_ID)
-        if (isEmpty(mProjectID)) {
+        mProjectIDToUpdate = intent.getStringExtra(LedgerDefine.PROJECT_ID)
+        if (isEmpty(mProjectIDToUpdate)) {
             // create new project
             fetchProjectIDPrefix()
         } else {
-            supportActionBar!!.subtitle = mProjectID
+            supportActionBar!!.subtitle = mProjectIDToUpdate
             getDataFromProjectID()
         }
 
     }
 
     private fun getDataFromProjectID() {
-        var docRef = FirestoreDataBase().db.collection(LedgerDefine.COMPANIES_SLASH + mCompanyName + LedgerDefine.SLASH_PROJECTS)
-            .whereEqualTo(LedgerDefine.PROJECT_ID, mProjectID)
+        var docRef =
+            FirestoreDataBase().db.collection(LedgerDefine.COMPANIES_SLASH + mCompanyName + LedgerDefine.SLASH_PROJECTS)
+                .whereEqualTo(LedgerDefine.PROJECT_ID, mProjectIDToUpdate)
 
         docRef.get()
             .addOnSuccessListener(OnSuccessListener<QuerySnapshot> {
@@ -62,6 +64,7 @@ class AddProjectActivity : AppCompatActivity(), View.OnClickListener {
 
                     tv_project_id.text = getStringFormDoc(doc, LedgerDefine.PROJECT_ID)
                     et_project_name.setText(getStringFormDoc(doc, LedgerDefine.NAME))
+                    et_project_nickname.setText(getStringFormDoc(doc, LedgerDefine.NICKNAME))
                     et_project_address.setText(getStringFormDoc(doc, LedgerDefine.ADDRESS))
                     et_project_division.setText(getStringFormDoc(doc, LedgerDefine.DIVISION))
                     et_remarks.setText(getStringFormDoc(doc, LedgerDefine.REMARK))
@@ -70,15 +73,46 @@ class AddProjectActivity : AppCompatActivity(), View.OnClickListener {
                     et_project_mb_no.setText(getStringFormDoc(doc, LedgerDefine.MB_NO))
                     et_project_head.setText(getStringFormDoc(doc, LedgerDefine.HEAD))
                     et_project_main_amount.setText(getStringFormDoc(doc, LedgerDefine.MAIN_AMOUNT))
-                    et_project_1st_maintenance.setText(getStringFormDoc(doc, LedgerDefine.MAINTENANCE_1ST_YEAR_AMOUNT))
-                    et_project_2nd_maintenance.setText(getStringFormDoc(doc, LedgerDefine.MAINTENANCE_2ND_YEAR_AMOUNT))
-                    et_project_3rd_maintenance.setText(getStringFormDoc(doc, LedgerDefine.MAINTENANCE_3RD_YEAR_AMOUNT))
-                    et_project_4th_maintenance.setText(getStringFormDoc(doc, LedgerDefine.MAINTENANCE_4TH_YEAR_AMOUNT))
-                    et_project_5th_maintenance.setText(getStringFormDoc(doc, LedgerDefine.MAINTENANCE_5TH_YEAR_AMOUNT))
+                    et_project_1st_maintenance.setText(
+                        getStringFormDoc(
+                            doc,
+                            LedgerDefine.MAINTENANCE_1ST_YEAR_AMOUNT
+                        )
+                    )
+                    et_project_2nd_maintenance.setText(
+                        getStringFormDoc(
+                            doc,
+                            LedgerDefine.MAINTENANCE_2ND_YEAR_AMOUNT
+                        )
+                    )
+                    et_project_3rd_maintenance.setText(
+                        getStringFormDoc(
+                            doc,
+                            LedgerDefine.MAINTENANCE_3RD_YEAR_AMOUNT
+                        )
+                    )
+                    et_project_4th_maintenance.setText(
+                        getStringFormDoc(
+                            doc,
+                            LedgerDefine.MAINTENANCE_4TH_YEAR_AMOUNT
+                        )
+                    )
+                    et_project_5th_maintenance.setText(
+                        getStringFormDoc(
+                            doc,
+                            LedgerDefine.MAINTENANCE_5TH_YEAR_AMOUNT
+                        )
+                    )
 
                 }
             })
-            .addOnFailureListener(OnFailureListener { e -> Log.w(TAG, "Error writing document", e) })
+            .addOnFailureListener(OnFailureListener { e ->
+                Log.w(
+                    TAG,
+                    "Error writing document",
+                    e
+                )
+            })
     }
 
     override fun onResume() {
@@ -112,6 +146,7 @@ class AddProjectActivity : AppCompatActivity(), View.OnClickListener {
     private fun saveProject() {
         Log.d(TAG, "saveProject ")
         val projectName = et_project_name.text.toString()
+        val projectNickName = et_project_nickname.text.toString()
         val projectAddress = et_project_address.text.toString()
         val projectDiv = et_project_division.text.toString()
         val projectNote = et_remarks.text.toString()
@@ -128,26 +163,31 @@ class AddProjectActivity : AppCompatActivity(), View.OnClickListener {
 
 
 
-        if (mProjectID == null && isEmpty(mIdPrefix)) {
+        if (isEmpty(mProjectIDToUpdate) == null && isEmpty(mNewProjectID)) {
             tv_project_id.error = getString(R.string.error_04)
             Toast.makeText(mContext, R.string.error_03, Toast.LENGTH_LONG).show()
             return
         }
         if (isEmpty(projectName)) {
             et_project_name.error = getString(R.string.error_05)
-            Toast.makeText(mContext, R.string.error_03, Toast.LENGTH_LONG).show()
+            return
+        }
+
+        if (isEmpty(projectNickName)) {
+            et_project_nickname.error = getString(R.string.error_05)
             return
         }
 
         // [START set_document]
         val project = HashMap<String, Any>()
         project[LedgerDefine.NAME] = projectName
+        project[LedgerDefine.NICKNAME] = projectNickName
         project[LedgerDefine.ADDRESS] = projectAddress
         project[LedgerDefine.DIVISION] = projectDiv
         project[LedgerDefine.REMARK] = projectNote
         project[LedgerDefine.START_DATE] = projectStartDate
         project[LedgerDefine.END_DATE] = projectEndDate
-        project[LedgerDefine.TIME_STAMP] =  FieldValue.serverTimestamp()
+        project[LedgerDefine.TIME_STAMP] = FieldValue.serverTimestamp()
         project[LedgerDefine.MB_NO] = projectMBNo
         project[LedgerDefine.HEAD] = projectHead
         project[LedgerDefine.MAIN_AMOUNT] = projectMainAmount
@@ -159,12 +199,13 @@ class AddProjectActivity : AppCompatActivity(), View.OnClickListener {
 
         btn_save.isEnabled = false
         val db = FirebaseFirestore.getInstance()
-        val companyName = LedgerSharePrefManger(mContext).getCompanyName()
-        if (isEmpty(mProjectID)) {
-            mProjectID = mIdPrefix + projectName.toUpperCase().replace(" ", "", true)
+        val companyName = LedgerSharePrefManger(mContext).getCompanyID()
+        if (isEmpty(mProjectIDToUpdate)) {
             project[LedgerDefine.AMOUNT] = 0
-            project[LedgerDefine.PROJECT_ID] = mProjectID!!
-            var docRef = db.collection(LedgerDefine.COMPANIES_SLASH + companyName + LedgerDefine.SLASH_PROJECTS).document(mProjectID!!)
+            project[LedgerDefine.PROJECT_ID] = mNewProjectID!!
+            var docRef =
+                db.collection(LedgerDefine.COMPANIES_SLASH + companyName + LedgerDefine.SLASH_PROJECTS)
+                    .document(mNewProjectID!!)
             Log.d(TAG, "docRef CRAETRE  $docRef")
 
             docRef.set(project)
@@ -177,7 +218,9 @@ class AddProjectActivity : AppCompatActivity(), View.OnClickListener {
                     btn_save.setText(R.string.failed)
                 })
         } else {
-            var docRef = db.collection(LedgerDefine.COMPANIES_SLASH + companyName + LedgerDefine.SLASH_PROJECTS).document(mProjectID!!)
+            var docRef =
+                db.collection(LedgerDefine.COMPANIES_SLASH + companyName + LedgerDefine.SLASH_PROJECTS)
+                    .document(mProjectIDToUpdate!!)
             Log.d(TAG, "docRef for update $docRef")
 
             docRef.update(project)
@@ -197,42 +240,45 @@ class AddProjectActivity : AppCompatActivity(), View.OnClickListener {
         return TextUtils.isEmpty(str)
     }
 
-    private var mIdPrefix: String? = null
+/*    override fun onBackPressed() {
+        val intent = Intent(this, GoogleSigninActivity::class.java)
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+        startActivity(intent)
+        finish()
+    }*/
+
+    private var mNewProjectID: String? = null
 
     private fun fetchProjectIDPrefix() {
-        var docRef = FirestoreDataBase().db.collection(LedgerDefine.COMPANIES_SLASH + mCompanyName + LedgerDefine.SLASH_PROJECTS)
-            .orderBy(LedgerDefine.PROJECT_ID, Query.Direction.DESCENDING).limit(1)
+        var docRef =
+            FirestoreDataBase().db.collection(LedgerDefine.COMPANIES_SLASH + mCompanyName + LedgerDefine.SLASH_PROJECTS)
+                .orderBy(LedgerDefine.PROJECT_ID, Query.Direction.DESCENDING).limit(1)
         docRef.get()
             .addOnSuccessListener(OnSuccessListener<QuerySnapshot> {
-                Log.d(
-                    TAG,
-                    "DataFetched data =  " + it.size()
-                )
                 if (it.size() <= 0) {
-                    mIdPrefix = "001_"
+                    mNewProjectID = "001"
                 } else {
-                    var tempUserId: String = it.documents.get(0).get(LedgerDefine.PROJECT_ID).toString()
-                    Log.d(
-                        TAG,
-                        "DataFetched data = pre get " + tempUserId.substring(0, 3)
-                    )
+                    var tempUserId: String =
+                        it.documents.get(0).get(LedgerDefine.PROJECT_ID).toString()
                     var pre = tempUserId.substring(0, 3).toInt() + 1
-                    Log.d(
-                        TAG,
-                        "DataFetched data = pre get " + pre
-                    )
                     if (pre < 10) {
-                        mIdPrefix = "00" + pre + "_"
-                    } else if (pre < 999) {
-                        mIdPrefix = "0" + pre + "_"
+                        mNewProjectID = "00$pre"
+                    } else if (pre < 100) {
+                        mNewProjectID = "0$pre"
                     }
 
 
                 }
-
-                tv_project_id.text = mIdPrefix
+                mNewProjectID += "_PROJECT"
+                tv_project_id.text = mNewProjectID
             })
-            .addOnFailureListener(OnFailureListener { e -> Log.w(TAG, "Error writing document", e) })
+            .addOnFailureListener(OnFailureListener { e ->
+                Log.w(
+                    TAG,
+                    "Error writing document",
+                    e
+                )
+            })
     }
 
     fun getStringFormDoc(document: DocumentSnapshot?, key: String): String {

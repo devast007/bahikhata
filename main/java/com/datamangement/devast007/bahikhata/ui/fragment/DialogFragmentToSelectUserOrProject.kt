@@ -1,7 +1,10 @@
 package com.datamangement.devast007.bahikhata.ui.fragment
 
+import android.app.AlertDialog
 import android.app.Dialog
+import android.content.DialogInterface
 import android.os.Bundle
+import android.os.Handler
 import android.support.v4.app.DialogFragment
 import android.view.Gravity
 import android.view.View
@@ -14,6 +17,7 @@ import com.datamangement.devast007.bahikhata.R
 import com.datamangement.devast007.bahikhata.ui.AddTransactionActivity
 import com.datamangement.devast007.bahikhata.utils.LedgerDefine
 import com.datamangement.devast007.bahikhata.utils.SqlDBFile
+import com.datamangement.devast007.bahikhata.utils.UserDetails
 import kotlinx.android.synthetic.main.activity_add_transaction.*
 
 
@@ -35,13 +39,13 @@ class DialogFragmentToSelectUserOrProject : DialogFragment(), AdapterView.OnItem
         mBottomSheetDialog.setContentView(R.layout.dialog_project_selection)
         mBottomSheetDialog.setCancelable(true)
         val lp = WindowManager.LayoutParams()
-        lp.copyFrom(mBottomSheetDialog.getWindow()!!.getAttributes())
+        lp.copyFrom(mBottomSheetDialog.window!!.attributes)
         lp.width = WindowManager.LayoutParams.MATCH_PARENT
         lp.height = WindowManager.LayoutParams.MATCH_PARENT
         lp.verticalMargin = 5.0f
         lp.gravity = Gravity.BOTTOM
         lp.windowAnimations = R.style.DialogAnimation
-        mBottomSheetDialog.getWindow()!!.setAttributes(lp)
+        mBottomSheetDialog.window!!.attributes = lp
 
         var titleSearchView = mBottomSheetDialog.findViewById<SearchView>(R.id.sv_dialog_title)
         var listView = mBottomSheetDialog.findViewById<ListView>(R.id.listview_project)
@@ -60,8 +64,11 @@ class DialogFragmentToSelectUserOrProject : DialogFragment(), AdapterView.OnItem
                     itemDataList.add(listItemMap)
                 }
                 simpleAdapter = SimpleAdapter(
-                    addTransactionActivity, itemDataList, android.R.layout.simple_list_item_2,
-                    arrayOf(LedgerDefine.USER_ID, LedgerDefine.NAME), intArrayOf(android.R.id.text1, android.R.id.text2)
+                    addTransactionActivity,
+                    itemDataList,
+                    android.R.layout.simple_list_item_2,
+                    arrayOf(LedgerDefine.USER_ID, LedgerDefine.NAME),
+                    intArrayOf(android.R.id.text1, android.R.id.text2)
                 )
                 listView.adapter = simpleAdapter
 
@@ -77,8 +84,11 @@ class DialogFragmentToSelectUserOrProject : DialogFragment(), AdapterView.OnItem
                     itemDataList.add(listItemMap)
                 }
                 simpleAdapter = SimpleAdapter(
-                    addTransactionActivity, itemDataList, android.R.layout.simple_list_item_2,
-                    arrayOf(LedgerDefine.USER_ID, LedgerDefine.NAME), intArrayOf(android.R.id.text1, android.R.id.text2)
+                    addTransactionActivity,
+                    itemDataList,
+                    android.R.layout.simple_list_item_2,
+                    arrayOf(LedgerDefine.USER_ID, LedgerDefine.NAME),
+                    intArrayOf(android.R.id.text1, android.R.id.text2)
                 )
                 listView.adapter = simpleAdapter
             }
@@ -138,9 +148,13 @@ class DialogFragmentToSelectUserOrProject : DialogFragment(), AdapterView.OnItem
                 return true
             }
         })
-        titleSearchView.onActionViewExpanded();
-        //titleSearchView.setIconified(false);
-        titleSearchView.requestFocus()
+
+        Handler().postDelayed({
+            titleSearchView.onActionViewExpanded();
+            //titleSearchView.setIconified(false);
+            titleSearchView.requestFocus()
+        }, 800)
+
         return mBottomSheetDialog
     }
 
@@ -155,8 +169,13 @@ class DialogFragmentToSelectUserOrProject : DialogFragment(), AdapterView.OnItem
                 for (user in addTransactionActivity!!.mSenderList!!) {
                     if (id == user.userID) {
                         addTransactionActivity!!.mSelectedSender = user
-                        var str = user.userID + "\n" + user.name
-                        addTransactionActivity!!.tv_sender_id.setText(str)
+                        if (user.userAccounts!!.size > 1) {
+                            showChooseUserDialog(user, mType)
+                        } else {
+                            var str = user.userAccounts!![0] + "\n" + user.name
+                            addTransactionActivity!!.tv_sender_id.text = str
+                        }
+
                         break
                     }
                 }
@@ -167,9 +186,14 @@ class DialogFragmentToSelectUserOrProject : DialogFragment(), AdapterView.OnItem
                 for (user in addTransactionActivity!!.mReceiverList!!) {
                     if (id == user.userID) {
                         addTransactionActivity!!.mSelectedReceiver = user
-                        var str = user.userID + "\n" + user.name
-                        addTransactionActivity!!.tv_receiver_id.setText(str)
-                        setPreferenceFromDB(id)
+                        if (user.userAccounts!!.size > 1) {
+                            showChooseUserDialog(user, mType)
+                        } else {
+                            var str = user.userAccounts!![0] + "\n" + user.name
+                            addTransactionActivity!!.tv_receiver_id.text = str
+                            setPreferenceFromDB(user.userAccounts!![0])
+                        }
+
                         break
 
                     }
@@ -182,7 +206,7 @@ class DialogFragmentToSelectUserOrProject : DialogFragment(), AdapterView.OnItem
                     if (id == project.projectID) {
                         addTransactionActivity!!.mSelectedProject = project
                         var str = project.projectID + "\n" + project.name
-                        addTransactionActivity!!.tv_project_id.setText(str)
+                        addTransactionActivity!!.tv_project_id.text = str
                         break
                     }
                 }
@@ -200,6 +224,7 @@ class DialogFragmentToSelectUserOrProject : DialogFragment(), AdapterView.OnItem
                         } else {
                             addTransactionActivity!!.mSelectedCreditAccount = bankAccountDetail
                             addTransactionActivity!!.tv_credit_account.setText(str)
+                            addTransactionActivity!!.rb_neft.isChecked = true
                         }
 
                     }
@@ -208,6 +233,41 @@ class DialogFragmentToSelectUserOrProject : DialogFragment(), AdapterView.OnItem
         }
 
         mBottomSheetDialog.dismiss()
+    }
+
+    private fun showChooseUserDialog(user: UserDetails, type: Int) {
+        AlertDialog.Builder(context)
+            .setTitle(user.userID)
+            .setMessage("Select Account !!")
+            .setCancelable(true)
+            .setPositiveButton(
+                R.string.personal,
+                DialogInterface.OnClickListener { dialog, which ->
+                    val PERSONAL_ACCOUNT = LedgerDefine.PREFIX_PERSONAL + user.userID
+                    var str = PERSONAL_ACCOUNT + "\n" + user.name
+                    if (type == LedgerDefine.SELECTION_TYPE_SENDER) {
+                        addTransactionActivity!!.tv_sender_id.text = str
+                    } else {
+                        addTransactionActivity!!.tv_receiver_id.text = str
+                        setPreferenceFromDB(PERSONAL_ACCOUNT)
+                    }
+                })
+
+            .setNegativeButton(R.string.master,
+                DialogInterface.OnClickListener { dialog, which ->
+                    val MASTERL_ACCOUNT = LedgerDefine.PREFIX_MASTER + user.userID
+                    var str = MASTERL_ACCOUNT + "\n" + user.name
+                    if (type == LedgerDefine.SELECTION_TYPE_SENDER) {
+                        addTransactionActivity!!.tv_sender_id.text = str
+                    } else {
+                        addTransactionActivity!!.tv_receiver_id.text = str
+                        setPreferenceFromDB(MASTERL_ACCOUNT)
+                    }
+
+                })
+            .setIcon(android.R.drawable.ic_dialog_alert)
+            .show()
+
     }
 
     private fun setPreferenceFromDB(id: String) {
@@ -221,7 +281,8 @@ class DialogFragmentToSelectUserOrProject : DialogFragment(), AdapterView.OnItem
         if (cursor != null) {
             if (cursor.moveToFirst()) {
                 val tempProject = cursor.getString(cursor.getColumnIndex(LedgerDefine.PROJECT_ID))
-                val creditAccount = cursor.getString(cursor.getColumnIndex(LedgerDefine.CREDIT_ACCOUNT_ID))
+                val creditAccount =
+                    cursor.getString(cursor.getColumnIndex(LedgerDefine.CREDIT_ACCOUNT_ID))
                 val remarks = cursor.getString(cursor.getColumnIndex(LedgerDefine.REMARK))
 
                 for (project in addTransactionActivity!!.mProjectList!!) {
@@ -238,6 +299,7 @@ class DialogFragmentToSelectUserOrProject : DialogFragment(), AdapterView.OnItem
                         var str = bankAccountDetail.accountNo + "\n" + bankAccountDetail.payee
                         addTransactionActivity!!.mSelectedCreditAccount = bankAccountDetail
                         addTransactionActivity!!.tv_credit_account.text = str
+                        addTransactionActivity!!.rb_neft.isChecked = true
                         isCreditAccountFound = true
                         break
                     }
@@ -245,6 +307,7 @@ class DialogFragmentToSelectUserOrProject : DialogFragment(), AdapterView.OnItem
                 if (!isCreditAccountFound) {
                     addTransactionActivity!!.mSelectedCreditAccount = null
                     addTransactionActivity!!.tv_credit_account.text = null
+                    addTransactionActivity!!.rb_other.isChecked = true
                 }
                 addTransactionActivity!!.et_remarks.setText(remarks)
             }

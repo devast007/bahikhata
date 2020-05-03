@@ -13,7 +13,10 @@ import com.datamangement.devast007.bahikhata.utils.LedgerUtils
 import com.datamangement.devast007.bahikhata.utils.ProjectDetails
 
 
-class ProjectViewAdapter(projectsViewActivity: ProjectsViewActivity, projectsList: ArrayList<ProjectDetails>) :
+class ProjectViewAdapter(
+    projectsViewActivity: ProjectsViewActivity,
+    projectsList: ArrayList<ProjectDetails>
+) :
     ExpandableListAdapter {
 
     private val mProjectsViewActivity = projectsViewActivity
@@ -62,7 +65,13 @@ class ProjectViewAdapter(projectsViewActivity: ProjectsViewActivity, projectsLis
         return true
     }
 
-    override fun getChildView(pos: Int, p1: Int, p2: Boolean, convertView: View?, parent: ViewGroup?): View? {
+    override fun getChildView(
+        pos: Int,
+        p1: Int,
+        p2: Boolean,
+        convertView: View?,
+        parent: ViewGroup?
+    ): View? {
         var view: View? = convertView
         var childHolder: ChildHolder? = null
         if (view == null) {
@@ -73,9 +82,10 @@ class ProjectViewAdapter(projectsViewActivity: ProjectsViewActivity, projectsLis
             childHolder = view.tag as ChildHolder?
         }
 
-        val projectDetails: ProjectDetails = mProjectsList.get(pos)
+        val projectDetails: ProjectDetails = mProjectsList[pos]
         childHolder!!.tvId.text = projectDetails.projectID
         childHolder!!.tvName.text = projectDetails.name
+        childHolder!!.tvNickname.text = projectDetails.nickname
         childHolder!!.tvAmount.text = LedgerUtils.getRupeesFormatted(projectDetails.amount)
         childHolder!!.tvAddress.text = projectDetails.address
         childHolder!!.tvDivision.text = projectDetails.division
@@ -85,17 +95,26 @@ class ProjectViewAdapter(projectsViewActivity: ProjectsViewActivity, projectsLis
 
         childHolder!!.tvMbNo.text = projectDetails.mbNo
         childHolder!!.tvHead.text = projectDetails.head
-        childHolder!!.tvMainAmount.text = projectDetails.mainAmount
-        childHolder!!.tvM1stYear.text = projectDetails.maintenace1stYearAmount
-        childHolder!!.tvM2ndYear.text = projectDetails.maintenace2ndYearAmount
-        childHolder!!.tvM3rdYear.text = projectDetails.maintenace3rdYearAmount
-        childHolder!!.tvM4thYear.text = projectDetails.maintenace4thYearAmount
-        childHolder!!.tvM5thYear.text = projectDetails.maintenace5thYearAmount
+        childHolder!!.tvMainAmount.text = LedgerUtils.getRupeesFormatted(projectDetails.mainAmount)
+        childHolder!!.tvM1stYear.text =
+            LedgerUtils.getRupeesFormatted(projectDetails.maintenace1stYearAmount)
+        childHolder!!.tvM2ndYear.text =
+            LedgerUtils.getRupeesFormatted(projectDetails.maintenace2ndYearAmount)
+        childHolder!!.tvM3rdYear.text =
+            LedgerUtils.getRupeesFormatted(projectDetails.maintenace3rdYearAmount)
+        childHolder!!.tvM4thYear.text =
+            LedgerUtils.getRupeesFormatted(projectDetails.maintenace4thYearAmount)
+        childHolder!!.tvM5thYear.text =
+            LedgerUtils.getRupeesFormatted(projectDetails.maintenace5thYearAmount)
         childHolder!!.tvTimestamp.text = projectDetails.timeStamp.toString()
 
         childHolder.tvEditProject.visibility = View.VISIBLE
         childHolder.tvEditProject.setTag(R.string.tag_project_id, projectDetails.projectID)
         childHolder.tvEditProject.setOnClickListener(mProjectsViewActivity)
+
+        childHolder.tvUpdateProject.setTag(R.string.tag_project_id, projectDetails.projectID)
+        childHolder.tvUpdateProject.setOnClickListener(mProjectsViewActivity)
+
         return view
     }
 
@@ -111,7 +130,12 @@ class ProjectViewAdapter(projectsViewActivity: ProjectsViewActivity, projectsLis
         return groupID
     }
 
-    override fun getGroupView(pos: Int, p1: Boolean, convertView: View?, parent: ViewGroup?): View? {
+    override fun getGroupView(
+        pos: Int,
+        p1: Boolean,
+        convertView: View?,
+        parent: ViewGroup?
+    ): View? {
         var view: View? = convertView
         var groupHolder: GroupHolder? = null
         if (view == null) {
@@ -148,6 +172,7 @@ class ProjectViewAdapter(projectsViewActivity: ProjectsViewActivity, projectsLis
     class ChildHolder(view: View) {
         var tvId: TextView = view.findViewById<TextView>(R.id.tv_project_id)
         val tvName: TextView = view.findViewById<TextView>(R.id.tv_project_name)
+        val tvNickname: TextView = view.findViewById<TextView>(R.id.tv_project_nickname)
         val tvAmount: TextView = view.findViewById<TextView>(R.id.tv_amount)
         var tvAddress: TextView = view.findViewById<TextView>(R.id.tv_project_address)
         var tvDivision: TextView = view.findViewById<TextView>(R.id.tv_project_div)
@@ -158,13 +183,19 @@ class ProjectViewAdapter(projectsViewActivity: ProjectsViewActivity, projectsLis
         val tvMbNo: TextView = view.findViewById<TextView>(R.id.tv_project_mb_no)
         val tvHead: TextView = view.findViewById<TextView>(R.id.tv_project_head)
         val tvMainAmount: TextView = view.findViewById<TextView>(R.id.tv_project_main_amount)
-        val tvM1stYear: TextView = view.findViewById<TextView>(R.id.tv_project_maintenance_amount_1st_year)
-        val tvM2ndYear: TextView = view.findViewById<TextView>(R.id.tv_project_maintenance_amount_2nd_year)
-        val tvM3rdYear: TextView = view.findViewById<TextView>(R.id.tv_project_maintenance_amount_3rd_year)
-        val tvM4thYear: TextView = view.findViewById<TextView>(R.id.tv_project_maintenance_amount_4th_year)
-        val tvM5thYear: TextView = view.findViewById<TextView>(R.id.tv_project_maintenance_amount_5th_year)
+        val tvM1stYear: TextView =
+            view.findViewById<TextView>(R.id.tv_project_maintenance_amount_1st_year)
+        val tvM2ndYear: TextView =
+            view.findViewById<TextView>(R.id.tv_project_maintenance_amount_2nd_year)
+        val tvM3rdYear: TextView =
+            view.findViewById<TextView>(R.id.tv_project_maintenance_amount_3rd_year)
+        val tvM4thYear: TextView =
+            view.findViewById<TextView>(R.id.tv_project_maintenance_amount_4th_year)
+        val tvM5thYear: TextView =
+            view.findViewById<TextView>(R.id.tv_project_maintenance_amount_5th_year)
 
         val tvEditProject: TextView = view.findViewById<TextView>(R.id.tv_edit_project)
+        val tvUpdateProject: TextView = view.findViewById<TextView>(R.id.tv_update_project_info)
 
         val tvTimestamp: TextView = view.findViewById<TextView>(R.id.tv_time_stamp)
     }

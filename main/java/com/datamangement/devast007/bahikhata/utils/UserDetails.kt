@@ -13,6 +13,28 @@ class UserDetails {
             field = value
         }
 
+    var p_MaterialCost: Long = 0
+        get() = field
+        set(value) {
+            field = value
+        }
+    var p_Payment: Long = 0
+        get() = field
+        set(value) {
+            field = value
+        }
+    var p_gstBill: Long = 0
+        get() = field
+        set(value) {
+            field = value
+        }
+
+    var m_Amount: Long = 0
+        get() = field
+        set(value) {
+            field = value
+        }
+
     var userID = ""
         get() = field
         set(value) {
@@ -46,6 +68,13 @@ class UserDetails {
         set(value) {
             field = value
         }
+
+    var userAccounts: ArrayList<String>? = null
+        get() = field
+        set(value) {
+            field = value
+        }
+
     var userCreatedDate = ""
         get() = field
         set(value) {

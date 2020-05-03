@@ -3,6 +3,18 @@ package com.datamangement.devast007.bahikhata.utils
 class LedgerDefine {
     companion object {
 
+        val ADMIN_ID: String = "3010000"
+        val ADMIN_ID_WITH_PREFIX: String = "A_3010000"
+        val PREFIX_ADMIN: String = "A_"
+        val USER_ACCOUNT_COUNT: String? = "USER_ACCOUNT_COUNT"
+        val P_MATERIAL_COST: String = "p_materialCost"
+        val P_PAYMENT: String = "p_payment"
+        val P_GST_BILL: String = "p_gstBill"
+        val M_AMOUNT: String = "m_amount"
+
+
+        val PREFIX_PERSONAL: String = "P_"
+        val PREFIX_MASTER: String = "M_"
         const val KEY_COMPANY_ID = "KEY_COMPANY_ID"
         const val KEY_USER_NAME = "KEY_USER_NAME"
         const val KEY_USER_ID = "KEY_USER_ID"
@@ -11,7 +23,9 @@ class LedgerDefine {
 
         const val KEY_SIGN_IN_INFO_PROFILE: String = "KEY_SIGN_IN_INFO_PROFILE"
         const val USER_ID = "userID"
+        const val IS_HAS_LIMITED_ACCESS = "isHasLimitedAccess"
         const val NAME = "name"
+        const val NICKNAME = "nickname"
         const val IS_ADMIN = "isAdmin"
         const val DESIGNATION = "designation"
         const val AMOUNT = "amount"
@@ -24,6 +38,7 @@ class LedgerDefine {
         const val PHONE_NUMBER = "phoneNumber"
         const val EMAIL = "email"
         const val ACCESSIBLE_PROJECTS = "accessibleProjects"
+        const val ACCOUNTS: String = "accounts"
 
         // Material
         const val MATERIAL_ID = "materialID"
@@ -34,9 +49,9 @@ class LedgerDefine {
 
         // GST
         const val GST_ID = "gstID"
-        const val BILL_AMOUNT = "billAmount"
-        const val GST_AMOUNT = "gstAmount"
-        const val GST_PERCENTAGE = "gstPercentage"
+        const val GST_BILL_AMOUNT = "billAmount"
+        const val GST_TAX_AMOUNT = "gstAmount"
+        const val GST_TAX_PERCENTAGE = "gstPercentage"
 
         const val REMARK = "remark"
         const val DESIGNATION_ADMIN: Long = 0
@@ -55,6 +70,8 @@ class LedgerDefine {
         const val RECEIVER_ID: String = "receiverID"
         const val TRANSACTION_DATE: String = "transactionDate"
         const val TRANSACTION_TYPE: String = "transactionType"
+
+        const val TRANSACTION_CHECKED: String = "TRANSACTION_CHECKED"
 
 
         const val TRANSACTION_TYPE_ADMIN = 1
@@ -85,11 +102,12 @@ class LedgerDefine {
         const val BANK_ACCOUNT_BRANCH_NAME: String = "bankAccountBranchName"
 
         // path
+        const val SLASH_TRANSACTIONS = "/transactions"
         const val COMPANIES_SLASH = "companies/"
         const val SLASH_BANK_ACCOUNTS = "/bankAccounts"
         const val SLASH_MATERIALS = "/materials"
-        const val SLASH_USERS ="/users"
-        const val SLASH_PROJECTS ="/projects"
+        const val SLASH_USERS = "/users"
+        const val SLASH_PROJECTS = "/projects"
         const val SLASH_GST = "/gst"
 
         const val DEBIT_ACCOUNT_ID: String = "DebitAccountID"
@@ -124,6 +142,11 @@ class LedgerDefine {
         const val RECEIVER_NAME: String = "RECEIVER_NAME"
         const val DEBIT_PAYEE: String = "DEBIT_PAYEE"
         const val CREDIT_PAYEE: String = "CREDIT_PAYEE"
+
+        const val SEARCH_FOR: String = "SEARCH_FOR"
+        const val SEARCH_FOR_TRANSACTIONS: Int = 1
+        const val SEARCH_FOR_MATERIALS: Int = 2
+        const val SEARCH_FOR_GST: Int = 3
 
     }
 

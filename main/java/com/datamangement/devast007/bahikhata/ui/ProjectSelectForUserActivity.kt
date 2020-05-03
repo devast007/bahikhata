@@ -61,14 +61,12 @@ class ProjectSelectForUserActivity : AppCompatActivity(), AdapterView.OnItemClic
 
     private fun getProjects(): Boolean {
         val db = FirestoreDataBase().db
-        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyName()
+        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyID()
         db.collection(LedgerDefine.COMPANIES_SLASH+ companyID + LedgerDefine.SLASH_PROJECTS)
             .get()
             .addOnCompleteListener(OnCompleteListener<QuerySnapshot> { task ->
                 if (task.isSuccessful) {
                     for (document in task.result!!) {
-                        Log.d(TAG, document.id + " => " + document.data)
-                        Log.d(TAG, " document.get(\"name\")+ => " + document.get("name"))
                         setSetProject(document);
                     }
                     mAdapter = ListAdapter()
