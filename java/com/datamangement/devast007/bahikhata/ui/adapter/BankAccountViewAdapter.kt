@@ -1,10 +1,12 @@
 package com.datamangement.devast007.bahikhata.ui.adapter
 
 import android.content.Context
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseExpandableListAdapter
+import android.widget.ImageView
 import android.widget.TextView
 import com.datamangement.devast007.bahikhata.R
 import com.datamangement.devast007.bahikhata.ui.BankAccountViewActivity
@@ -18,9 +20,9 @@ class BankAccountViewAdapter(
 ) :
     BaseExpandableListAdapter() {
 
-    val mbankAccountViewActivity = bankAccountViewActivity
-    val mAccountsList = accountList
-    var mInflater: LayoutInflater =
+    private val mbankAccountViewActivity = bankAccountViewActivity
+    private val mAccountsList = accountList
+    private var mInflater: LayoutInflater =
         mbankAccountViewActivity.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
 
     override fun getChildrenCount(p0: Int): Int {
@@ -62,7 +64,13 @@ class BankAccountViewAdapter(
         return true
     }
 
-    override fun getChildView(pos: Int, p1: Int, p2: Boolean, convertView: View?, parent: ViewGroup?): View? {
+    override fun getChildView(
+        pos: Int,
+        p1: Int,
+        p2: Boolean,
+        convertView: View?,
+        parent: ViewGroup?
+    ): View? {
         var view: View? = convertView
         var childHolder: ChildHolder? = null
         if (view == null) {
@@ -73,16 +81,18 @@ class BankAccountViewAdapter(
             childHolder = view.tag as ChildHolder?
         }
 
-        val accountDetail: BankAccountDetail = mAccountsList.get(pos)
-        childHolder!!.tvID.setText(accountDetail.id)
-        childHolder!!.tvAccountNo.setText(accountDetail.accountNo)
-        childHolder!!.tvPayee.setText(accountDetail.payee)
-        childHolder!!.amount.setText(LedgerUtils.getRupeesFormatted(accountDetail.amount))
-        childHolder!!.remark.setText(accountDetail.remarks)
-        childHolder!!.tvIFSCCode.setText(accountDetail.ifscCode)
-        childHolder!!.timestamp.setText(accountDetail.timestamp)
-        childHolder!!.tvBranch.setText(accountDetail.branch)
+        val accountDetail: BankAccountDetail = mAccountsList[pos]
+        childHolder!!.tvID.text = accountDetail.id
+        childHolder!!.tvAccountNo.text = accountDetail.accountNo
+        childHolder!!.tvPayee.text = accountDetail.payee
+        childHolder!!.amount.text = LedgerUtils.getRupeesFormatted(accountDetail.amount)
+        childHolder!!.remark.text = accountDetail.remarks
+        childHolder!!.tvIFSCCode.text = accountDetail.ifscCode
+        childHolder!!.timestamp.text = accountDetail.timestamp
+        childHolder!!.tvBranch.text = accountDetail.branch
+        childHolder!!.edit.setTag(R.string.tag_account_id, accountDetail.id)
 
+        childHolder!!.edit.setOnClickListener(mbankAccountViewActivity)
 
         return view
     }
@@ -99,7 +109,12 @@ class BankAccountViewAdapter(
         return groupID
     }
 
-    override fun getGroupView(pos: Int, p1: Boolean, convertView: View?, parent: ViewGroup?): View? {
+    override fun getGroupView(
+        pos: Int,
+        isExpanded: Boolean,
+        convertView: View?,
+        parent: ViewGroup?
+    ): View? {
         var view: View? = convertView
         var groupHolder: GroupHolder? = null
         if (view == null) {
@@ -110,11 +125,24 @@ class BankAccountViewAdapter(
             groupHolder = view.tag as GroupHolder?
         }
 
-        val accountDetails: BankAccountDetail = mAccountsList.get(pos)
-        groupHolder!!.tvPayee.setText(accountDetails.payee)
-        groupHolder!!.tvAccountNo.setText(accountDetails.accountNo)
-        groupHolder!!.tvBranch.setText(accountDetails.branch)
-        groupHolder!!.tvIFSCCode.setText(accountDetails.ifscCode)
+        if (isExpanded) {
+            view!!.setBackgroundResource(R.drawable.selected_group)
+        } else {
+            view!!.setBackgroundColor(Color.parseColor("#00000000"))
+        }
+
+        val accountDetails: BankAccountDetail = mAccountsList[pos]
+        groupHolder!!.tvPayee.text = accountDetails.payee + "[" + accountDetails.id + "]"
+        groupHolder!!.tvAccountNo.text = accountDetails.accountNo
+        //groupHolder!!.tvAccountAmount.text = LedgerUtils.getRupeesFormatted(accountDetails.amount)
+        groupHolder!!.tvIFSCCode.text = accountDetails.ifscCode
+
+        groupHolder!!.ivShare.setTag(R.string.tag_position, pos)
+        groupHolder!!.tvAccountAmountSent.setTag(R.string.tag_account_id, accountDetails.id)
+        groupHolder!!.tvAccountAmountSent.setOnClickListener(mbankAccountViewActivity)
+        groupHolder!!.tvAccountAmountReceived.setTag(R.string.tag_account_id, accountDetails.id)
+        groupHolder!!.tvAccountAmountReceived.setOnClickListener(mbankAccountViewActivity)
+        groupHolder!!.ivShare.setOnClickListener(mbankAccountViewActivity)
         return view
     }
 
@@ -124,22 +152,25 @@ class BankAccountViewAdapter(
     }
 
     class GroupHolder(view: View) {
-        var tvPayee = view.findViewById<TextView>(R.id.tv_bank_account_payee)
-        var tvBranch = view.findViewById<TextView>(R.id.tv_bank_account_branch)
-        val tvAccountNo = view.findViewById<TextView>(R.id.tv_bank_account_number)
+        var tvPayee: TextView = view.findViewById<TextView>(R.id.tv_bank_account_payee)
+        var tvAccountAmountSent: TextView = view.findViewById<TextView>(R.id.tv_bank_account_amount_sent)
+        var tvAccountAmountReceived: TextView = view.findViewById<TextView>(R.id.tv_bank_account_amount_received)
+        val tvAccountNo: TextView = view.findViewById<TextView>(R.id.tv_bank_account_number)
         var tvIFSCCode: TextView = view.findViewById<TextView>(R.id.tv_bank_account_ifsc_code)
+        var ivShare: ImageView = view.findViewById<ImageView>(R.id.iv_share_account)
 
     }
 
     class ChildHolder(view: View) {
-        var tvPayee = view.findViewById<TextView>(R.id.tv_bank_account_payee)
-        var tvBranch = view.findViewById<TextView>(R.id.tv_bank_account_branch)
-        val tvAccountNo = view.findViewById<TextView>(R.id.tv_bank_account_number)
+        var tvPayee: TextView = view.findViewById<TextView>(R.id.tv_bank_account_payee)
+        var tvBranch: TextView = view.findViewById<TextView>(R.id.tv_bank_account_branch)
+        val tvAccountNo: TextView = view.findViewById<TextView>(R.id.tv_bank_account_number)
         var tvIFSCCode: TextView = view.findViewById<TextView>(R.id.tv_bank_account_ifsc_code)
         var tvID: TextView = view.findViewById<TextView>(R.id.tv_bank_account_id)
         var remark: TextView = view.findViewById<TextView>(R.id.tv_bank_account_remarks)
         var timestamp: TextView = view.findViewById<TextView>(R.id.tv_bank_account_timestamp)
         var amount: TextView = view.findViewById<TextView>(R.id.tv_bank_account_amount)
+        var edit: TextView = view.findViewById<TextView>(R.id.tv_edit_bank_account_info)
     }
 
 }

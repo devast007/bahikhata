@@ -1,7 +1,22 @@
 package com.datamangement.devast007.bahikhata.utils
 
+import java.util.*
+
 class ProjectDetails {
+    var driveLink: String=""
     var name: String = ""
+        get() = field
+        set(value) {
+            field = value
+        }
+
+    var nickname: String = ""
+        get() = field
+        set(value) {
+            field = value
+        }
+
+    var subCategory: String = ""
         get() = field
         set(value) {
             field = value
@@ -13,7 +28,7 @@ class ProjectDetails {
             field = value
         }
 
-    var projectID = ""
+    var projectID:String? = ""
         get() = field
         set(value) {
             field = value
@@ -59,4 +74,51 @@ class ProjectDetails {
         set(value) {
             field = value
         }
+    var mainAmount: String = ""
+        get() = field
+        set(value) {
+            field = value
+        }
+    var mbNo: String = ""
+        get() = field
+        set(value) {
+            field = value
+        }
+    var head: String = ""
+        get() = field
+        set(value) {
+            field = value
+        }
+    var maintenace1stYearAmount: String = ""
+        get() = field
+        set(value) {
+            field = value
+        }
+    var maintenace2ndYearAmount: String = ""
+        get() = field
+        set(value) {
+            field = value
+        }
+    var maintenace3rdYearAmount: String = ""
+        get() = field
+        set(value) {
+            field = value
+        }
+    var maintenace4thYearAmount: String = ""
+        get() = field
+        set(value) {
+            field = value
+        }
+    var maintenace5thYearAmount: String = ""
+        get() = field
+        set(value) {
+            field = value
+        }
+
+    var timeStamp: String? = null
+        get() = field
+        set(value) {
+            field = value
+        }
+
 }

@@ -4,60 +4,64 @@ import android.app.Activity
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
-import android.support.design.widget.Snackbar
-import android.support.v7.app.AppCompatActivity
 import android.text.TextUtils
 import android.util.Log
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import com.datamangement.devast007.bahikhata.R
 import com.datamangement.devast007.bahikhata.firestore.FirestoreDataBase
 import com.datamangement.devast007.bahikhata.utils.LedgerDefine
 import com.datamangement.devast007.bahikhata.utils.LedgerSharePrefManger
+import com.datamangement.devast007.bahikhata.utils.LedgerUtils
+import com.datamangement.devast007.bahikhata.utils.SqlDBFile
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.gms.tasks.OnFailureListener
 import com.google.android.gms.tasks.OnSuccessListener
+import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.firestore.*
 import kotlinx.android.synthetic.main.activity_add_users.*
 import java.util.*
 
-class AddUsersActivity : AppCompatActivity(), View.OnClickListener {
+class AddUsersActivity : AppCompatActivity(), View.OnClickListener,
+    LedgerUtils.Companion.StatusListner {
 
 
+    private var mUserId: Long = -1
     val TAG = "AddUsersActivity"
     val mContext = this
-    var accessProjects: ArrayList<String>? = null
-    var mNormalId: String? = null
-    var mSupervisorId: String? = null
     val mDB = FirebaseFirestore.getInstance()
     var mCompanyName: String? = null
-    private val BASE_NORMAL_USER_ID: Long = 6010000
-    private val DIFF_NORMAL_SUP_ID: Long = 1000000
     private var mUserAddType = LedgerDefine.USER_ADD_TYPE_NEW
+    private var mLaunchedFrom: Int = -1
+    override fun onBackPressed() {
+        super.onBackPressed()
+        if (mLaunchedFrom == LedgerDefine.LAUNCHED_FROM_VIEW_LIST_ACTIVITY) {
+            val newIntent = Intent(mContext, UsersViewActivity::class.java)
+            newIntent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
+            mContext!!.startActivity(newIntent)
+
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_users)
-        toolbar.setTitle(R.string.users)
-        setSupportActionBar(toolbar)
+        supportActionBar!!.setTitle(R.string.title_activity_add_users)
         btn_save.setOnClickListener(this)
         btn_project_access.setOnClickListener(this)
 
-        mCompanyName = LedgerSharePrefManger(mContext).getCompanyName()
+        mCompanyName = LedgerSharePrefManger(mContext).getCompanyID()
         mUserAddType = intent.getIntExtra(
             LedgerDefine.USER_ADD_TYPE, -1
         )
+        mLaunchedFrom = intent.getIntExtra(
+            LedgerDefine.LAUNCHED_FROM, -1
+        )
         if (mUserAddType == LedgerDefine.USER_ADD_TYPE_MODIFY) {
-            var userID1 = intent.getStringExtra(LedgerDefine.USER_ID)
-            var userID2: String? = null
-            if (userID1.toLong() < BASE_NORMAL_USER_ID) {
-                userID2 = "" + (userID1.toLong() + DIFF_NORMAL_SUP_ID)
-            } else {
-                userID2 = "" + (userID1.toLong() - DIFF_NORMAL_SUP_ID)
-            }
-            getUserDetails(userID1)
-            getUserDetails(userID2)
+            var userID = intent.getStringExtra(LedgerDefine.USER_ID)
+            getUserDetails(userID!!)
         } else {
             fetchUserID()
         }
@@ -73,7 +77,7 @@ class AddUsersActivity : AppCompatActivity(), View.OnClickListener {
         snackbar.setActionTextColor(Color.BLUE)
         val sbView = snackbar.view
         sbView.setBackgroundColor(Color.RED)
-        val textView = sbView.findViewById<TextView>(android.support.design.R.id.snackbar_text)
+        val textView = sbView.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
         textView.setTextColor(Color.parseColor("#FF0B3E0D"))
         snackbar.show()
 
@@ -81,15 +85,13 @@ class AddUsersActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun getUserDetails(userID: String) {
         val db = FirestoreDataBase().db
-        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyName()
-        Log.d(TAG, "companyID => " + companyID + " , userID = " + userID)
-        db.collection(LedgerDefine.COMPANIES_SLASH + companyID + "/users").whereEqualTo(LedgerDefine.USER_ID, userID)
+        val companyID = LedgerSharePrefManger(this!!.mContext).getCompanyID()
+        db.collection(LedgerDefine.COMPANIES_SLASH + companyID + LedgerDefine.SLASH_USERS)
+            .whereEqualTo(LedgerDefine.USER_ID, userID.toLong())
             .get()
             .addOnCompleteListener(OnCompleteListener<QuerySnapshot> { task ->
                 if (task.isSuccessful) {
                     for (document in task.result!!) {
-                        Log.d(TAG, document.id + " => " + document.data)
-                        Log.d(TAG, " document.get(\"name\")+ => " + document.get("name"))
                         setUserInfo(document);
                     }
                 } else {
@@ -102,22 +104,15 @@ class AddUsersActivity : AppCompatActivity(), View.OnClickListener {
     private fun setUserInfo(document: QueryDocumentSnapshot?) {
         run {
             if (document != null) {
-                var userID = document.get(LedgerDefine.USER_ID) as String
-                if (document.get(LedgerDefine.DESIGNATION) == LedgerDefine.DESIGNATION_SUPERVISOR) {
-                    checkbox_supervisor.isChecked = true
-                    checkbox_supervisor.isEnabled = false
-                    mSupervisorId = userID
-                    checkbox_supervisor.text = mSupervisorId
-                    return
+                var id: Any? = document.get(LedgerDefine.USER_ID)
+                try {
+                    id = id as String
+                } catch (e: ClassCastException) {
+                    id = id as Long
                 }
-                tv_user_id.text = userID
-                mNormalId = userID
-                if (isEmpty(mSupervisorId)) {
-                    mSupervisorId = "" + (mNormalId!!.toLong() - DIFF_NORMAL_SUP_ID)
-                    checkbox_supervisor.text = mSupervisorId
-                }
+                mUserId = id.toString().toLong()
 
-
+                tv_user_id.text = "update Info For $mUserId";
                 var temp = document.get(LedgerDefine.NAME)
                 if (temp != null) et_user_name.setText(temp as String)
 
@@ -134,6 +129,17 @@ class AddUsersActivity : AppCompatActivity(), View.OnClickListener {
 
                 if (projects != null) {
                     mProjectIDArrayList = projects as ArrayList<String>
+                }
+                var userAccounts = document.get(LedgerDefine.ACCOUNTS)
+
+                if (userAccounts != null) {
+                    if ((userAccounts as ArrayList<String>).size >= 2) {
+                        checkbox_supervisor.isEnabled = false
+                        checkbox_supervisor.isChecked = true
+                        checkbox_supervisor.text = "Already Have Master Account"
+                    } else {
+                        checkbox_supervisor.isEnabled = true
+                    }
                 }
                 if (mProjectIDArrayList != null) {
                     btn_project_access.text = mProjectIDArrayList.toString()
@@ -166,56 +172,51 @@ class AddUsersActivity : AppCompatActivity(), View.OnClickListener {
     private var mProjectIDArrayList: ArrayList<String>? = ArrayList<String>()
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == Activity.RESULT_OK) {
             if (REQUEST_CODE == requestCode) {
                 var bundle = data!!.extras
-                mProjectIDArrayList = bundle.getStringArrayList(LedgerDefine.ALL_PROJECTS)
+                mProjectIDArrayList = bundle!!.getStringArrayList(LedgerDefine.ALL_PROJECTS)
                 btn_project_access.setText(mProjectIDArrayList.toString())
             }
         }
     }
 
     private fun fetchUserID() {
-        var docRef = mDB.collection(LedgerDefine.COMPANIES_SLASH + mCompanyName + "/users")
-            .orderBy(LedgerDefine.USER_ID, Query.Direction.DESCENDING).limit(1)
+        var docRef =
+            mDB.collection(LedgerDefine.COMPANIES_SLASH + mCompanyName + LedgerDefine.SLASH_USERS)
+                .orderBy(LedgerDefine.USER_ID, Query.Direction.DESCENDING).limit(1)
         docRef.get()
             .addOnSuccessListener(OnSuccessListener<QuerySnapshot> {
-                Log.d(
-                    TAG,
-                    "DataFetched data =  " + it
-                )
-                var tempUserId: Long = it.documents.get(0).get(LedgerDefine.USER_ID).toString().toLong()
-                Log.d(
-                    TAG,
-                    "DataFetched tempUserId =  " + tempUserId
-                )
-
-
-
-                if (tempUserId!! >= BASE_NORMAL_USER_ID) {
-                    mNormalId = "" + (tempUserId + 1)
-                    mSupervisorId = "" + (tempUserId + 1 - DIFF_NORMAL_SUP_ID)
-                } else {
-                    mNormalId = "" + BASE_NORMAL_USER_ID
-                    mSupervisorId = "" + (BASE_NORMAL_USER_ID - DIFF_NORMAL_SUP_ID)
+                var id: Any? = it.documents[0].get(LedgerDefine.USER_ID)
+                try {
+                    id = id as String
+                } catch (e: ClassCastException) {
+                    id = id as Long
                 }
+                var tempUserId: Long = id.toString().toLong()
+                mUserId = tempUserId + 1
 
-                tv_user_id.setText(String.format(getString(R.string.new_user_id), mNormalId))
-                checkbox_supervisor.setText(String.format(getString(R.string.new_user_id), mSupervisorId))
+                tv_user_id.setText(String.format(getString(R.string.new_user_id), mUserId))
 
             })
-            .addOnFailureListener(OnFailureListener { e -> Log.w(TAG, "Error writing document", e) })
+            .addOnFailureListener(OnFailureListener { e ->
+                Log.w(
+                    TAG,
+                    "Error writing document",
+                    e
+                )
+            })
     }
 
     private fun saveUser() {
-        Log.d(TAG, "saveUser ")
         val userName = et_user_name.text.toString()
         val userAddress = et_user_address.text.toString()
         val userEmail = et_user_email.text.toString()
         val userPhone = et_user_phone.text.toString()
         val remarks = et_user_remarks.text.toString()
 
-        if (isEmpty(mNormalId)) {
+        if (mUserId.toInt() == -1) {
             Toast.makeText(mContext, R.string.error_03, Toast.LENGTH_LONG).show()
             return
         }
@@ -225,66 +226,66 @@ class AddUsersActivity : AppCompatActivity(), View.OnClickListener {
             return
         }
 
-        var users = mDB.collection(LedgerDefine.COMPANIES_SLASH + mCompanyName + "/users");
-        var docRefNor = users.document(this!!.mNormalId!!)
-        Log.d(TAG, "docRef " + docRefNor)
+        var users =
+            mDB.collection(LedgerDefine.COMPANIES_SLASH + mCompanyName + LedgerDefine.SLASH_USERS);
+        var docRefNor = users.document(mUserId.toString())
         // [START set_document]
-        val user = HashMap<String, Any>()
-        user.put(LedgerDefine.USER_ID, this!!.mNormalId!!)
-        user.put(LedgerDefine.NAME, userName)
-        user.put(LedgerDefine.ADDRESS, userAddress)
-        user.put(LedgerDefine.EMAIL, userEmail)
-        user.put(LedgerDefine.PHONE_NUMBER, userPhone)
-        user.put(LedgerDefine.REMARK, remarks)
-        user.put(LedgerDefine.DESIGNATION, LedgerDefine.DESIGNATION_NORMAL)
-        user.put(LedgerDefine.TIME_STAMP, FieldValue.serverTimestamp())
-        user.put(LedgerDefine.ACCESSIBLE_PROJECTS, this!!.mProjectIDArrayList!!)
-        btn_save.isEnabled = false
-        if (mUserAddType == LedgerDefine.USER_ADD_TYPE_MODIFY) {
-            docRefNor.update(user).addOnSuccessListener(OnSuccessListener {
-                Log.d(TAG, "DocumentSnapshot successfully updated!")
-                tv_user_id.append(" Updated Successfully !!");
-            }).addOnFailureListener(OnFailureListener { e -> Log.w(TAG, "Error writing document", e) })
-        } else {
-            docRefNor.set(user)
-                .addOnSuccessListener(OnSuccessListener<Void> {
-                    Log.d(TAG, "DocumentSnapshot successfully written!")
-                    tv_user_id.append(" Done !!");
-                })
-                .addOnFailureListener(OnFailureListener { e -> Log.w(TAG, "Error writing document", e) })
-        }
-        if (checkbox_supervisor.isChecked) {
-            if (mUserAddType == LedgerDefine.USER_ADD_TYPE_MODIFY) {
-                user.put(LedgerDefine.DESIGNATION, LedgerDefine.DESIGNATION_SUPERVISOR)
-                user.put(LedgerDefine.USER_ID, this!!.mSupervisorId!!)
-                var docRefSup = users.document(this!!.mSupervisorId!!)
-                docRefSup.update(user).addOnSuccessListener(OnSuccessListener {
-                    Log.d(TAG, "DocumentSnapshot successfully updated!")
-                    checkbox_supervisor.append(" Updated Successfully !!");
-                }).addOnFailureListener(OnFailureListener { e ->
-                    Log.w(TAG, "Error updating not possible but adding new user document", e)
-                    docRefSup.set(user)
-                        .addOnSuccessListener(OnSuccessListener<Void> {
-                            Log.d(TAG, "DocumentSnapshot successfully written!")
-                            checkbox_supervisor.append(" Done !!");
-                            showSnackBar()
-                        })
-                        .addOnFailureListener(OnFailureListener { e -> Log.w(TAG, "Error writing document", e) })
-                })
-            } else {
-                user.put(LedgerDefine.DESIGNATION, LedgerDefine.DESIGNATION_SUPERVISOR)
-                user.put(LedgerDefine.USER_ID, this!!.mSupervisorId!!)
-                var docRefSup = users.document(this!!.mSupervisorId!!)
-                docRefSup.set(user)
-                    .addOnSuccessListener(OnSuccessListener<Void> {
-                        Log.d(TAG, "DocumentSnapshot successfully written!")
-                        checkbox_supervisor.append(" Done !!");
-                        showSnackBar()
-                    })
-                    .addOnFailureListener(OnFailureListener { e -> Log.w(TAG, "Error writing document", e) })
-            }
-        }
+        val userMap = HashMap<String, Any>()
+        userMap[LedgerDefine.USER_ID] = mUserId
+        userMap[LedgerDefine.NAME] = userName.toUpperCase().trim()
+        userMap[LedgerDefine.ADDRESS] = userAddress
+        userMap[LedgerDefine.EMAIL] = userEmail
+        userMap[LedgerDefine.PHONE_NUMBER] = userPhone
+        userMap[LedgerDefine.REMARK] = remarks
+        userMap[LedgerDefine.DESIGNATION] = LedgerDefine.DESIGNATION_NORMAL
+        userMap[LedgerDefine.TIME_STAMP] = FieldValue.serverTimestamp()
 
+        FieldValue.serverTimestamp()
+        userMap[LedgerDefine.ACCESSIBLE_PROJECTS] = this!!.mProjectIDArrayList!!
+        btn_save.isEnabled = false
+        LedgerUtils.setstatusListner(this)
+        if (mUserAddType == LedgerDefine.USER_ADD_TYPE_MODIFY) {
+            if (checkbox_supervisor.isEnabled && checkbox_supervisor.isChecked) {
+                userMap[LedgerDefine.DESIGNATION] = LedgerDefine.DESIGNATION_SUPERVISOR
+                var userAccounts: ArrayList<String> = ArrayList<String>()
+                userAccounts.add(LedgerDefine.PREFIX_PERSONAL + mUserId)
+                userAccounts.add(LedgerDefine.PREFIX_MASTER + mUserId)
+                userMap[LedgerDefine.ACCOUNTS] = userAccounts
+            }
+
+            LedgerUtils.setDataToFirestore(
+                mContext!!, userMap[LedgerDefine.USER_ID]!!,
+                SqlDBFile.CONTENT_URI_TABLE_USERS, LedgerDefine.UPDATE_DATA, docRefNor, userMap
+            )
+            /*docRefNor.update(user).addOnSuccessListener(OnSuccessListener {
+                tv_user_id.append(" Updated Successfully !!");
+            }).addOnFailureListener(OnFailureListener { e ->
+                Log.w(
+                    TAG,
+                    "Error writing document",
+                    e
+                )
+            })*/
+        } else {
+            var userAccounts: ArrayList<String> = ArrayList<String>()
+            userAccounts.add(LedgerDefine.PREFIX_PERSONAL + mUserId)
+            if (checkbox_supervisor.isChecked) {
+                userMap[LedgerDefine.DESIGNATION] = LedgerDefine.DESIGNATION_SUPERVISOR
+                userAccounts.add(LedgerDefine.PREFIX_MASTER + mUserId)
+            }
+            userMap[LedgerDefine.ACCOUNTS] = userAccounts
+            LedgerUtils.setDataToFirestore(
+                mContext!!, userMap[LedgerDefine.USER_ID]!!,
+                SqlDBFile.CONTENT_URI_TABLE_USERS, LedgerDefine.SET_DATA, docRefNor, userMap
+            )
+            /*docRefNor.set(user)
+                .addOnSuccessListener(OnSuccessListener<Void> {
+                    tv_user_id.append(" Done !!");
+                    Log.d("it.toString()", "it.toString() = "+it.toString())
+                    showSnackBar()
+                })
+                .addOnFailureListener(OnFailureListener { e -> Log.w(TAG, "Error writing document", e) })*/
+        }
     }
 
     private fun toast(id: Int) {
@@ -293,5 +294,20 @@ class AddUsersActivity : AppCompatActivity(), View.OnClickListener {
 
     fun isEmpty(str: String?): Boolean {
         return TextUtils.isEmpty(str)
+    }
+
+    override fun onComplete(status: Boolean) {
+        if (status) {
+            if (mUserAddType == LedgerDefine.USER_ADD_TYPE_MODIFY) {
+                tv_user_id.append(" Updated Successfully !!");
+            } else {
+                tv_user_id.append(" Done !!");
+                showSnackBar()
+            }
+
+        } else {
+
+
+        }
     }
 }

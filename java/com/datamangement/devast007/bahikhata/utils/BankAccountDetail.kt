@@ -36,6 +36,11 @@ class BankAccountDetail {
         set(value) {
             field = value
         }
+    var systemMill: Long = 0
+        get() = field
+        set(value) {
+            field = value
+        }
 
     var amount: Long = 0
         get() = field

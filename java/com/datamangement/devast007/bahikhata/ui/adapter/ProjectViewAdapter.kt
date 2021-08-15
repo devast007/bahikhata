@@ -2,6 +2,7 @@ package com.datamangement.devast007.bahikhata.ui.adapter
 
 import android.content.Context
 import android.database.DataSetObserver
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,13 +14,16 @@ import com.datamangement.devast007.bahikhata.utils.LedgerUtils
 import com.datamangement.devast007.bahikhata.utils.ProjectDetails
 
 
-class ProjectViewAdapter(projectsViewActivity: ProjectsViewActivity, projectsList: ArrayList<ProjectDetails>) :
+class ProjectViewAdapter(
+    projectsViewActivity: ProjectsViewActivity,
+    projectsList: ArrayList<ProjectDetails>
+) :
     ExpandableListAdapter {
 
-    val mProjectsViewActivity = projectsViewActivity
-    val mProjectsList = projectsList
+    private val mProjectsViewActivity = projectsViewActivity
+    private val mProjectsList = projectsList
     var mInflater: LayoutInflater =
-        mProjectsViewActivity.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+        mProjectsViewActivity.mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
 
     override fun getChildrenCount(p0: Int): Int {
         return 1;
@@ -62,7 +66,13 @@ class ProjectViewAdapter(projectsViewActivity: ProjectsViewActivity, projectsLis
         return true
     }
 
-    override fun getChildView(pos: Int, p1: Int, p2: Boolean, convertView: View?, parent: ViewGroup?): View? {
+    override fun getChildView(
+        pos: Int,
+        p1: Int,
+        p2: Boolean,
+        convertView: View?,
+        parent: ViewGroup?
+    ): View? {
         var view: View? = convertView
         var childHolder: ChildHolder? = null
         if (view == null) {
@@ -73,16 +83,41 @@ class ProjectViewAdapter(projectsViewActivity: ProjectsViewActivity, projectsLis
             childHolder = view.tag as ChildHolder?
         }
 
-        val projectDetails: ProjectDetails = mProjectsList.get(pos)
-        childHolder!!.tvId.setText(projectDetails.projectID)
-        childHolder!!.tvName.setText(projectDetails.name)
-        childHolder!!.tvAmount.setText(LedgerUtils.getRupeesFormatted(projectDetails.amount))
-        childHolder!!.tvAddress.setText(projectDetails.address)
-        childHolder!!.tvDivision.setText(projectDetails.division)
-        childHolder!!.tvStartDate.setText(projectDetails.startDate)
-        childHolder!!.tvEndDate.setText(projectDetails.endDate)
-        childHolder!!.tvRemarks.setText(projectDetails.remarks)
+        val projectDetails: ProjectDetails = mProjectsList[pos]
+        childHolder!!.tvId.text = projectDetails.projectID
+        childHolder!!.tvName.text = projectDetails.name
+        childHolder!!.tvNickname.text = projectDetails.nickname
+        childHolder!!.tvAmount.text = LedgerUtils.getRupeesFormatted(projectDetails.amount)
+        childHolder!!.tvAddress.text = projectDetails.address
+        childHolder!!.tvDivision.text = projectDetails.division
+        childHolder!!.tvStartDate.text = projectDetails.startDate
+        childHolder!!.tvEndDate.text = projectDetails.endDate
+        childHolder!!.tvRemarks.text = projectDetails.remarks
 
+        childHolder!!.tvMbNo.text = projectDetails.mbNo
+        childHolder!!.tvHead.text = projectDetails.head
+        childHolder!!.tvMainAmount.text = LedgerUtils.getRupeesFormatted(projectDetails.mainAmount)
+        childHolder!!.tvM1stYear.text =
+            LedgerUtils.getRupeesFormatted(projectDetails.maintenace1stYearAmount)
+        childHolder!!.tvM2ndYear.text =
+            LedgerUtils.getRupeesFormatted(projectDetails.maintenace2ndYearAmount)
+        childHolder!!.tvM3rdYear.text =
+            LedgerUtils.getRupeesFormatted(projectDetails.maintenace3rdYearAmount)
+        childHolder!!.tvM4thYear.text =
+            LedgerUtils.getRupeesFormatted(projectDetails.maintenace4thYearAmount)
+        childHolder!!.tvM5thYear.text =
+            LedgerUtils.getRupeesFormatted(projectDetails.maintenace5thYearAmount)
+        childHolder!!.tvTimestamp.text = projectDetails.timeStamp.toString()
+
+        childHolder.tvDriveLink.setTag(R.string.tag_drive_link, projectDetails.driveLink)
+        childHolder.tvDriveLink.setOnClickListener(mProjectsViewActivity)
+
+        childHolder.tvEditProject.visibility = View.VISIBLE
+        childHolder.tvEditProject.setTag(R.string.tag_project_id, projectDetails.projectID)
+        childHolder.tvEditProject.setOnClickListener(mProjectsViewActivity)
+
+        childHolder.tvUpdateProject.setTag(R.string.tag_project_id, projectDetails.projectID)
+        childHolder.tvUpdateProject.setOnClickListener(mProjectsViewActivity)
 
         return view
     }
@@ -99,7 +134,12 @@ class ProjectViewAdapter(projectsViewActivity: ProjectsViewActivity, projectsLis
         return groupID
     }
 
-    override fun getGroupView(pos: Int, p1: Boolean, convertView: View?, parent: ViewGroup?): View? {
+    override fun getGroupView(
+        pos: Int,
+        isExpanded: Boolean,
+        convertView: View?,
+        parent: ViewGroup?
+    ): View? {
         var view: View? = convertView
         var groupHolder: GroupHolder? = null
         if (view == null) {
@@ -110,12 +150,29 @@ class ProjectViewAdapter(projectsViewActivity: ProjectsViewActivity, projectsLis
             groupHolder = view.tag as GroupHolder?
         }
 
+
+        if (isExpanded) {
+            view!!.setBackgroundResource(R.drawable.selected_group)
+        } else {
+            view!!.setBackgroundColor(Color.parseColor("#00000000"))
+        }
+
         val projectDetails: ProjectDetails = mProjectsList.get(pos)
         groupHolder!!.tvId.setText(projectDetails.projectID)
         groupHolder!!.tvName.setText(projectDetails.name)
         groupHolder!!.tvAmount.setText(LedgerUtils.getRupeesFormatted(projectDetails.amount))
         groupHolder!!.tvAmount.setTag(R.string.tag_project_id, projectDetails.projectID)
         groupHolder!!.tvAmount.setOnClickListener(mProjectsViewActivity)
+
+        groupHolder!!.tvProjectMaterial.setTag(R.string.tag_project_id, projectDetails.projectID)
+        groupHolder!!.tvProjectMaterial.setOnClickListener(mProjectsViewActivity)
+
+        groupHolder!!.tvAllTransactions.setTag(R.string.tag_project_id, projectDetails.projectID)
+        groupHolder!!.tvAllTransactions.setOnClickListener(mProjectsViewActivity)
+
+        groupHolder!!.tvPayments.setTag(R.string.tag_project_id, projectDetails.projectID)
+        groupHolder!!.tvPayments.setOnClickListener(mProjectsViewActivity)
+
         return view
     }
 
@@ -129,19 +186,45 @@ class ProjectViewAdapter(projectsViewActivity: ProjectsViewActivity, projectsLis
     class GroupHolder(view: View) {
         var tvId = view.findViewById<TextView>(R.id.tv_project_id)
         val tvName = view.findViewById<TextView>(R.id.tv_project_name)
-        var tvAmount: TextView = view.findViewById<TextView>(R.id.tv_amount) as TextView
+        var tvAmount = view.findViewById<TextView>(R.id.tv_amount)
+        val tvProjectMaterial = view.findViewById<TextView>(R.id.tv_project_material)
+        val tvAllTransactions = view.findViewById<TextView>(R.id.tv_project_transactions)
+        val tvPayments = view.findViewById<TextView>(R.id.tv_payments)
 
     }
 
     class ChildHolder(view: View) {
-        var tvId = view.findViewById<TextView>(R.id.tv_project_id)
-        val tvName = view.findViewById<TextView>(R.id.tv_project_name)
-        val tvAmount = view.findViewById<TextView>(R.id.tv_amount)
-        var tvAddress = view.findViewById<TextView>(R.id.tv_project_address)
-        var tvDivision = view.findViewById<TextView>(R.id.tv_project_div)
-        val tvStartDate = view.findViewById<TextView>(R.id.tv_project_start_date)
-        val tvEndDate = view.findViewById<TextView>(R.id.tv_project_end_date)
-        val tvRemarks = view.findViewById<TextView>(R.id.tv_project_remarks)
+        var tvId: TextView = view.findViewById<TextView>(R.id.tv_project_id)
+        val tvName: TextView = view.findViewById<TextView>(R.id.tv_project_name)
+        val tvNickname: TextView = view.findViewById<TextView>(R.id.tv_project_nickname)
+        val tvAmount: TextView = view.findViewById<TextView>(R.id.tv_amount)
+        var tvAddress: TextView = view.findViewById<TextView>(R.id.tv_project_address)
+        var tvDivision: TextView = view.findViewById<TextView>(R.id.tv_project_div)
+        val tvStartDate: TextView = view.findViewById<TextView>(R.id.tv_project_start_date)
+        val tvEndDate: TextView = view.findViewById<TextView>(R.id.tv_project_end_date)
+        val tvRemarks: TextView = view.findViewById<TextView>(R.id.tv_project_remarks)
+
+        val tvMbNo: TextView = view.findViewById<TextView>(R.id.tv_project_mb_no)
+        val tvHead: TextView = view.findViewById<TextView>(R.id.tv_project_head)
+        val tvMainAmount: TextView = view.findViewById<TextView>(R.id.tv_project_main_amount)
+        val tvM1stYear: TextView =
+            view.findViewById<TextView>(R.id.tv_project_maintenance_amount_1st_year)
+        val tvM2ndYear: TextView =
+            view.findViewById<TextView>(R.id.tv_project_maintenance_amount_2nd_year)
+        val tvM3rdYear: TextView =
+            view.findViewById<TextView>(R.id.tv_project_maintenance_amount_3rd_year)
+        val tvM4thYear: TextView =
+            view.findViewById<TextView>(R.id.tv_project_maintenance_amount_4th_year)
+        val tvM5thYear: TextView =
+            view.findViewById<TextView>(R.id.tv_project_maintenance_amount_5th_year)
+
+        val tvEditProject: TextView = view.findViewById<TextView>(R.id.tv_edit_project)
+
+        val tvUpdateProject: TextView = view.findViewById<TextView>(R.id.tv_update_project_info)
+
+        val tvTimestamp: TextView = view.findViewById<TextView>(R.id.tv_time_stamp)
+        val tvDriveLink: TextView = view.findViewById<TextView>(R.id.tv_google_drive_link)
+
     }
 
 }
