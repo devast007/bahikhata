@@ -8,28 +8,36 @@
         android:orientation="vertical"
         tools:context=".ui.BankAccountViewActivity">
 
-    <android.support.design.widget.AppBarLayout
-            android:layout_height="wrap_content"
-            android:layout_width="match_parent"
-            android:theme="@style/AppTheme.AppBarOverlay">
 
-        <android.support.v7.widget.Toolbar
-                android:id="@+id/toolbar"
+
+    <RelativeLayout
+
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+
+        <LinearLayout
+                android:id="@+id/ll_expandable"
                 android:layout_width="match_parent"
-                android:layout_height="?attr/actionBarSize"
-                android:background="?attr/colorPrimary"
-                app:popupTheme="@style/AppTheme.PopupOverlay"/>
+                android:layout_height="match_parent"
+                android:orientation="vertical">
 
-    </android.support.design.widget.AppBarLayout>
 
-    <ExpandableListView
-            android:id="@+id/expadable_list_view"
-            android:layout_width="match_parent"
-            android:childDivider="@android:color/holo_green_dark"
-            android:divider="@color/colorPrimaryDark"
-            android:dividerHeight="1dp"
-            android:layoutDirection="rtl"
-            android:layout_height="wrap_content">
+            <ExpandableListView
+                    android:id="@+id/expandable_list_view"
+                    android:layout_width="match_parent"
+                    android:childDivider="@android:color/holo_green_dark"
+                    android:divider="@color/colorPrimaryDark"
+                    android:dividerHeight="1dp"
+                    android:layoutDirection="rtl"
+                    android:layout_height="match_parent">
 
-    </ExpandableListView>
+            </ExpandableListView>
+
+        </LinearLayout>
+
+
+    </RelativeLayout>
+
+
 </LinearLayout>

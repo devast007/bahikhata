@@ -1,0 +1,111 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/dialog_project_select"
+        android:layout_width="match_parent"
+        android:layout_height="fill_parent"
+        android:layout_gravity="right"
+        android:backgroundTint="@color/colorPrimary"
+        android:gravity="right"
+        android:orientation="vertical"
+        android:padding="5dp">
+
+    <LinearLayout
+            android:id="@+id/ll_radio_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#097C9F"
+            android:orientation="horizontal"
+            android:weightSum="4">
+
+
+        <RadioGroup
+                android:id="@+id/rg_filter"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_weight="4"
+                android:background="#097C9F"
+                android:orientation="horizontal">
+
+            <RadioButton
+                    android:id="@+id/rb_sender"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_weight="1"
+                    android:checked="true"
+                    android:text="@string/sender_filter"
+                    android:textColor="@android:color/white" />
+
+            <RadioButton
+                    android:id="@+id/rb_receiver"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_weight="1"
+                    android:text="@string/receiver_filter"
+                    android:textColor="@android:color/white" />
+
+            <RadioButton
+                    android:id="@+id/rb_work"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_weight="1"
+                    android:text="@string/work_filter"
+                    android:textColor="@android:color/white" />
+            <RadioButton
+                    android:id="@+id/rb_subcategory"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_weight="1"
+                    android:text="@string/sub_category"
+                    android:textColor="@android:color/white" />
+
+        </RadioGroup>
+
+
+    </LinearLayout>
+
+    <SearchView
+            android:id="@+id/sv_dialog_filter"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/ll_radio_button"
+            android:layout_gravity="center"
+            android:layout_marginBottom="@dimen/activity_horizontal_margin"
+            android:background="#252101"
+            android:gravity="center"
+            android:outlineSpotShadowColor="@color/colorAccent"
+            android:queryHint="@string/type_to_search"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+
+    <ListView
+            android:id="@+id/listview"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/sv_dialog_filter"
+            android:layout_gravity="right"
+            android:gravity="right"
+            android:scrollbars="none" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/btn_filter_ok"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginTop="@dimen/activity_horizontal_margin"
+            android:layout_marginEnd="16dp"
+            android:layout_marginRight="16dp"
+            android:layout_marginBottom="5dp"
+            android:clickable="true"
+            android:src="@android:drawable/ic_menu_save"
+            android:tint="@android:color/white"
+            app:fabSize="normal" />
+
+
+</RelativeLayout>
