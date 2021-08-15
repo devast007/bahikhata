@@ -1,0 +1,56 @@
+{
+  "project_info": {
+    "project_number": "590115038319",
+    "firebase_url": "https://webhost-c2bbb.firebaseio.com",
+    "project_id": "webhost-c2bbb",
+    "storage_bucket": "webhost-c2bbb.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:590115038319:android:3ba023fd50a7d8ba",
+        "android_client_info": {
+          "package_name": "com.datamangement.devast007.bahikhata"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "590115038319-pa3lto7es34idqe1nv0prn1g07q2lc80.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.datamangement.devast007.bahikhata",
+            "certificate_hash": "dca31311e599e5a6ef0cfa2dbcb1972ef04d5436"
+          }
+        },
+        {
+          "client_id": "590115038319-4l8h9tlecujhm5bech3f09ud2mltqteo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.datamangement.devast007.bahikhata",
+            "certificate_hash": "5fc0c026e0dab7311c38268dbeebecbd37b1d993"
+          }
+        },
+        {
+          "client_id": "590115038319-am94b945og5rdvbef99kfhtl4td85i51.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBeAwDvQuLV-VSNZwSnigM9xPv9GpnP1zs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "590115038319-h4mbbsr5ea2vv916f325rqmegr7c3bl8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
