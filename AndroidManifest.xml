@@ -1,70 +1,98 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.datamangement.devast007.bahikhata">
-
+        package="com.datamangement.devast007.bahikhata">
     <!-- To auto-complete the email text field in the login form with the user's emails -->
-    <uses-permission android:name="android.permission.GET_ACCOUNTS"/>
-    <uses-permission android:name="android.permission.READ_PROFILE"/>
-    <uses-permission android:name="android.permission.READ_CONTACTS"/>
+    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+    <uses-permission android:name="android.permission.READ_PROFILE" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
             android:allowBackup="true"
-            android:icon="@mipmap/icon_register"
+            android:icon="@drawable/ic_bahikhata_24"
             android:label="@string/app_name"
-            android:roundIcon="@mipmap/icon_register"
+            android:requestLegacyExternalStorage="true"
+            android:roundIcon="@drawable/ic_bahikhata_24"
             android:supportsRtl="true"
             android:theme="@style/AppTheme">
         <activity
+                android:name=".ui.StatementActivity"
+                android:label="@string/title_activity_statement"
+                android:theme="@style/AppTheme"></activity>
+        <activity
+                android:name=".ui.MaterialAndServiceViewActivity"
+                android:label="@string/manage_material_and_services"
+                android:theme="@style/AppTheme" />
+        <activity
+                android:name=".ui.GstViewActivity"
+                android:label="@string/material_view"
+                android:theme="@style/AppTheme" />
+        <activity
                 android:name=".ui.GoogleSigninActivity"
                 android:label="@string/app_name"
-                android:theme="@style/AppTheme.NoActionBar">
+                android:theme="@style/AppTheme">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
+                <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER"/>
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
             </intent-filter>
         </activity>
-        <activity android:name=".ui.TransactionViewActivity">
-        </activity>
+        <activity android:name=".ui.TransactionViewActivity" />
         <activity
                 android:name=".ui.AddProjectActivity"
                 android:label="@string/title_activity_add_project"
-                android:theme="@style/AppTheme.NoActionBar">
-        </activity>
+                android:theme="@style/AppTheme" />
         <activity
                 android:name=".ui.AddUsersActivity"
                 android:label="@string/title_activity_add_users"
-                android:theme="@style/AppTheme.NoActionBar">
-        </activity>
+                android:theme="@style/AppTheme" />
         <activity
                 android:name=".ui.AddTransactionActivity"
                 android:label="@string/title_activity_add_transaction"
-                android:theme="@style/AppTheme.NoActionBar">
-        </activity>
+                android:theme="@style/AppTheme" />
         <activity
                 android:name=".ui.ProjectsViewActivity"
                 android:label="@string/title_activity_projects_view"
-                android:theme="@style/AppTheme.NoActionBar">
-        </activity>
+                android:theme="@style/AppTheme" />
         <activity
                 android:name=".ui.UsersViewActivity"
                 android:label="@string/title_activity_users_view"
-                android:theme="@style/AppTheme.NoActionBar">
-        </activity>
-        <activity android:name=".ui.ProjectSelectForUserActivity">
-        </activity>
+                android:theme="@style/AppTheme" />
+        <activity android:name=".ui.ProjectSelectForUserActivity" />
         <activity
                 android:name=".ui.BankAccountViewActivity"
                 android:label="@string/title_activity_bank_account_view"
-                android:theme="@style/AppTheme.NoActionBar">
+                android:theme="@style/AppTheme" />
+        <activity
+                android:name=".ui.MaterialViewActivity"
+                android:label="@string/material_view"
+                android:theme="@style/AppTheme" />
+        <activity
+                android:name=".ui.AddGSTActivity"
+                android:label="@string/add_gst"
+                android:theme="@style/AppTheme" />
+        <activity
+                android:name=".ui.AddMaterialActivity"
+                android:label="@string/add_material"
+                android:theme="@style/AppTheme">
+
         </activity>
         <activity
                 android:name=".ui.AddBankAccountActivity"
                 android:label="@string/title_activity_add_bank_account"
-                android:theme="@style/AppTheme.NoActionBar">
-        </activity>
+                android:theme="@style/AppTheme" />
+
+        <provider
+                android:name=".utils.SqlDBFile"
+                android:authorities="com.datamangement.devast007.bahikhata" />
     </application>
 
 </manifest>
