@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginLeft="8dp"
+        android:layoutDirection="ltr"
+        android:orientation="vertical">
+
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="4dp"
+            android:orientation="horizontal"
+            android:weightSum="2">
+
+        <TextView
+                android:id="@+id/tv_bank_account_payee"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:maxLength="21"
+                android:text="@string/accounts"
+                android:textColor="@android:color/black"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+        <TextView
+                android:id="@+id/tv_bank_account_ifsc_code"
+                android:layout_width="wrap_content"
+                android:layout_height="96px"
+                android:layout_gravity="right|center_horizontal"
+                android:layout_weight="1"
+                android:gravity="right|center_vertical"
+                android:text="@string/action_sign_in"
+                android:textSize="14dp"
+                android:textStyle="bold" />
+
+        <ImageView
+                android:id="@+id/iv_share_account"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:paddingLeft="4dp"
+                android:src="@android:drawable/ic_menu_share" />
+
+    </LinearLayout>
+
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="4dp"
+            android:orientation="horizontal"
+            android:weightSum="3">
+
+        <TextView
+                android:id="@+id/tv_bank_account_number"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:padding="2dp"
+                android:text="@string/accounts"
+                android:textStyle="bold" />
+
+        <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="2"
+                android:orientation="horizontal">
+
+            <TextView
+                    android:id="@+id/tv_bank_account_amount_sent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="right"
+                    android:layout_weight="1"
+                    android:background="@color/selector_button_background_sender"
+                    android:gravity="right"
+                    android:padding="2dp"
+                    android:text="@string/sent_rupees"
+                    android:textColor="@color/selector_text_color_state"
+                    android:textStyle="bold" />
+
+            <TextView
+                    android:id="@+id/tv_bank_account_amount_received"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="right"
+                    android:layout_weight="1"
+                    android:background="@color/selector_button_background_receiver"
+                    android:gravity="right"
+                    android:padding="2dp"
+                    android:text="@string/received_rupees"
+                    android:textColor="@color/selector_text_color_state"
+                    android:textStyle="bold" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+
+</LinearLayout>
