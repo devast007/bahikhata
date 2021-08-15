@@ -4,15 +4,20 @@
       xmlns:tools="http://schemas.android.com/tools"
       tools:context=".ui.AddProjectActivity">
 
+
     <item
-            android:id="@+id/action_signout"
+            android:id="@+id/action_search"
             android:orderInCategory="300"
-            android:title="@string/sign_out"
+            android:title="@string/search_user"
+            app:actionViewClass="androidx.appcompat.widget.SearchView"
+            android:icon="@android:drawable/ic_menu_search"
             app:showAsAction="ifRoom"></item>
 
     <item
-            android:id="@+id/action_edit_code"
+            android:id="@+id/action_add"
             android:orderInCategory="300"
-            android:title="@string/edit_code"
+            android:title="@string/add_new_user"
+            android:icon="@android:drawable/ic_input_add"
             app:showAsAction="never"></item>
+
 </menu>

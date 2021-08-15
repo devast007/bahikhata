@@ -2,13 +2,55 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
       xmlns:app="http://schemas.android.com/apk/res-auto"
       xmlns:tools="http://schemas.android.com/tools"
-      tools:context=".ui.AddProjectActivity">
+      tools:context=".ui.MaterialViewActivity">
+
+    <item
+            android:id="@+id/action_filter"
+            android:orderInCategory="300"
+            android:title="@string/filter"
+            app:showAsAction="never"></item>
+
+    <item
+            android:id="@+id/action_add_all_visible"
+            android:orderInCategory="300"
+            android:title="@string/add_all_visible"
+            app:showAsAction="never"></item>
 
     <item
             android:id="@+id/action_add"
             android:orderInCategory="300"
-            android:title="@string/add_project"
+            android:title="@string/add_new"
             android:icon="@android:drawable/ic_input_add"
             app:showAsAction="ifRoom"></item>
+
+    <item
+            android:id="@+id/action_excel_file"
+            android:orderInCategory="200"
+            android:title="@string/excel_file"
+            app:showAsAction="never"></item>
+
+    <item
+            android:id="@+id/action_edit_rate"
+            android:orderInCategory="200"
+            android:title="@string/change_rate"
+            app:showAsAction="never"></item>
+    <item
+            android:id="@+id/action_pdf"
+            android:orderInCategory="200"
+            android:title="@string/create_pdf"
+            app:showAsAction="never"></item>
+
+    <item
+            android:id="@+id/action_change_project"
+            android:orderInCategory="200"
+            android:title="@string/change_project"
+            app:showAsAction="never"></item>
+
+
+    <item
+            android:id="@+id/action_change_subcategory"
+            android:orderInCategory="200"
+            android:title="@string/change_subcategory"
+            app:showAsAction="never"></item>
 
 </menu>

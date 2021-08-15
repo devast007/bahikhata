@@ -1,32 +1,80 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
-      xmlns:app="http://schemas.android.com/apk/res-auto"
-      xmlns:tools="http://schemas.android.com/tools"
-      tools:context=".ui.AddProjectActivity">
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        tools:context=".ui.AddProjectActivity">
 
     <item
-            android:id="@+id/action_received"
-            android:orderInCategory="500"
-            android:title="@string/received"
-            android:icon="@mipmap/icon_incoming_green_arrow"
-            app:showAsAction="ifRoom"></item>
-    <item
-            android:id="@+id/action_send"
-            android:orderInCategory="400"
-            android:title="@string/sent"
-            android:icon="@mipmap/icon_outgoing_red_arrow"
-            app:showAsAction="ifRoom"></item>
-    <item
             android:id="@+id/action_add"
+            android:icon="@android:drawable/ic_menu_add"
             android:orderInCategory="300"
-            android:title="@string/add_project"
-            android:icon="@android:drawable/ic_input_add"
-            app:showAsAction="ifRoom"></item>
+            android:title="@string/add_new_transaction"
+            app:showAsAction="always"></item>
+    <item
+            android:id="@+id/action_switch"
+            android:icon="@android:drawable/ic_menu_revert"
+            android:orderInCategory="300"
+            android:title="@string/switch_view"
+            app:showAsAction="always"></item>
+    <item
+            android:id="@+id/action_pdf"
+            android:orderInCategory="300"
+            android:title="@string/create_pdf"
+            android:visible="false"
+            app:showAsAction="never"></item>
 
     <item
             android:id="@+id/action_excel"
             android:orderInCategory="300"
             android:title="@string/excel_file"
+            app:showAsAction="never"></item>
+
+    <item
+            android:id="@+id/action_filter"
+            android:orderInCategory="300"
+            android:title="@string/filter"
+            app:showAsAction="never"></item>
+
+
+    <item
+            android:id="@+id/action_drag_down_for_addition"
+            android:icon="@mipmap/down_arrow"
+            android:orderInCategory="300"
+            android:title="@string/drag_down_for_addition"
+            android:visible="false"
+            app:showAsAction="always"></item>
+
+    <item
+            android:id="@+id/action_cancel_addition"
+            android:icon="@android:drawable/ic_menu_close_clear_cancel"
+            android:orderInCategory="300"
+            android:title="@string/cancel"
+            android:visible="false"
+            app:showAsAction="always"></item>
+
+    <item
+            android:id="@+id/action_relate_transactions"
+            android:icon="@android:drawable/ic_menu_close_clear_cancel"
+            android:orderInCategory="300"
+            android:title="@string/relate_transactions"
+            android:visible="true"
+            app:showAsAction="ifRoom"></item>
+
+    <item
+            android:id="@+id/action_change_subcategory"
+            android:icon="@android:drawable/ic_menu_close_clear_cancel"
+            android:orderInCategory="300"
+            android:title="@string/change_subcategory"
+            android:visible="true"
+            app:showAsAction="never"></item>
+
+
+    <item
+            android:id="@+id/action_change_project"
+            android:icon="@android:drawable/ic_menu_close_clear_cancel"
+            android:orderInCategory="300"
+            android:title="@string/change_project"
+            android:visible="true"
             app:showAsAction="never"></item>
 
 </menu>

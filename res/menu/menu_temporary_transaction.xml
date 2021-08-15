@@ -5,14 +5,16 @@
       tools:context=".ui.AddProjectActivity">
 
     <item
-            android:id="@+id/action_signout"
-            android:orderInCategory="300"
-            android:title="@string/sign_out"
+            android:id="@+id/action_history"
+            android:orderInCategory="500"
+            android:title="@string/received"
+            android:icon="@mipmap/icon_incoming_green_arrow"
             app:showAsAction="ifRoom"></item>
 
     <item
-            android:id="@+id/action_edit_code"
+            android:id="@+id/action_excel"
             android:orderInCategory="300"
-            android:title="@string/edit_code"
+            android:title="@string/excel_file"
             app:showAsAction="never"></item>
+
 </menu>
